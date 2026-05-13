@@ -416,7 +416,247 @@ Load data in callbacks or module-level code that runs once. Layout should be che
 
 ---
 
-## 9. Interview Cheat-Sheet
+## 9. Phase 3 Patterns — Dynamic Drawer with Editable Fields
+
+Building interactive task editors with Dash requires understanding several subtle issues around component lifecycle, callback registration, and state synchronization.
+
+**keepMounted=True on dmc.Drawer**
+
+In Dash Material Components (DMC) 2.7.0+, a Drawer that is not mounted will not render its children in the DOM. Callbacks targeting elements inside a Drawer (e.g., a ChipGroup inside a Drawer) cannot register listeners until those elements exist in the DOM. Without `keepMounted=True`, the Drawer re-mounts on each open/close cycle, destroying and recreating its children, which causes callback registration to fail silently.
+
+```python
+dmc.Drawer(
+    id='task-drawer',
+    title="Edit Task",
+    children=[
+        dmc.ChipGroup(id='priority-chips', value='normal'),
+        # Other form fields
+    ],
+    keepMounted=True  # Critical: keeps children in DOM even when closed
+)
+```
+
+Without this flag, your callbacks targeting `priority-chips` will never fire because the ChipGroup doesn't exist in the DOM when the callback tries to register.
+
+**allow_duplicate=True for multi-writer Outputs**
+
+When multiple callbacks write to the same Output (a pattern common in task editors), Dash requires `allow_duplicate=True` on the Output to avoid a registration error. In Stride, `store-tasks` is written by callbacks for move_task, toggle_done, save_category, save_priority, and on_dnd_drop. Each one must declare:
+
+```python
+@callback(
+    Output("store-tasks", "data", allow_duplicate=True),
+    Input("priority-chips", "value"),
+    State("detail-task-id", "data")
+)
+def save_priority(new_priority, task_id):
+    # Update store-tasks
+    ...
+```
+
+This tells Dash: "Yes, I know multiple callbacks touch this. It's intentional." Without it, Dash will error at startup.
+
+**Read-before-write guard for chip groups**
+
+DMC ChipGroup fires its value change callback whenever its value prop is updated, including when the drawer is first populated. In populate_detail, you set the chip value to match the current task data:
+
+```python
+dmc.ChipGroup(id='priority-chips', value=task_data.priority)  # Triggers value change!
+```
+
+This immediately fires the `save_priority` callback, writing the same value back to the database. Guard against it:
+
+```python
+@callback(
+    Output("store-tasks", "data", allow_duplicate=True),
+    Input("priority-chips", "value"),
+    State("detail-task-id", "data")
+)
+def save_priority(new_priority, task_id):
+    current_db_value = db.query(task_id).priority
+    if new_priority == current_db_value:
+        raise PreventUpdate  # Don't write if nothing changed
+    return update_task_priority(task_id, new_priority)
+```
+
+**Blur-save vs immediate-save pattern**
+
+Text fields (title, description) use `n_blur` to trigger saves; discrete selectors (priority, category, size) use value changes. The tradeoff:
+- **Blur-save** (text): Prevents a database write on every keystroke. The user types the full title, then clicks away. Only then does the callback fire.
+- **Immediate-save** (chips): Each selection is a final decision. There's no "I might change my mind"; every value change should be persisted.
+
+```python
+# Text: blur-save
+dcc.Input(id='title-input', type='text', debounce=300)
+
+@callback(
+    Output("store-tasks", "data", allow_duplicate=True),
+    Input("title-input", "n_blur"),
+    State("title-input", "value")
+)
+def save_title(n_blur, new_title):
+    # Fires when user clicks away from the input
+    ...
+
+# Chips: immediate-save
+dmc.ChipGroup(id='priority-chips')
+
+@callback(
+    Output("store-tasks", "data", allow_duplicate=True),
+    Input("priority-chips", "value")
+)
+def save_priority(new_priority):
+    # Fires immediately on any value change
+    ...
+```
+
+**CSS hover flyout instead of dmc.Menu**
+
+Dash and React Context don't always play well. DMC's Menu is a compound component built on React Context (the Menu wrapper creates the context, Menu.Item consumes it). When you render a Menu inside a pattern-matched callback, React's context propagation sometimes fails, and Menu.Item elements don't receive the context.
+
+Workaround: Use plain HTML buttons and CSS:
+
+```python
+html.Div(
+    className='card-move-wrapper',
+    children=[
+        html.Button('⋮', className='card-menu-btn'),
+        html.Div(
+            className='card-menu',
+            children=[
+                html.Button('Move to Monday', n_clicks=0, id={'type': 'move-btn', 'index': task_id, 'action': 'monday'})
+            ]
+        )
+    ]
+)
+```
+
+```css
+.card-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+}
+
+.card-move-wrapper:hover .card-menu {
+    display: block;
+}
+```
+
+No JavaScript needed, no context propagation issues, and it works reliably inside pattern-matched callbacks.
+
+---
+
+## 10. Phase 4 Patterns — HTML5 Drag-and-Drop Bridge
+
+HTML5 drag-and-drop integrates with Dash through clientside callbacks and the low-level `window.dash_clientside.set_props` API.
+
+**window.dash_clientside.set_props — Direct prop writes**
+
+Dash 2.9+ exposes `window.dash_clientside.set_props`, a function that writes directly into a component's props without a server round-trip. Signature:
+
+```javascript
+window.dash_clientside.set_props(componentId, {propName: value})
+```
+
+The componentId can be a string (for simple IDs) or an object (for pattern-matched IDs). In Stride's dnd.js:
+
+```javascript
+document.addEventListener('drop', function(e) {
+    const task_id = e.dataTransfer.getData('task_id');
+    const to_day_key = e.target.closest('.day-column').dataset.dayKey;
+    
+    window.dash_clientside.set_props('store-dnd-drop', {
+        data: {task_id, to_day_key}
+    });
+    // This write triggers the server callback listening to store-dnd-drop
+});
+```
+
+This avoids a full server round-trip for every drag operation. The JavaScript updates the store; Dash notices the change and fires the associated server callback.
+
+**Event delegation for dynamic DOM**
+
+Dash re-renders the entire task list when store-tasks changes, destroying and recreating all card DOM nodes. If you attach event listeners directly to individual cards, they're lost on re-render. Solution: event delegation.
+
+```javascript
+document.addEventListener('dragstart', function(e) {
+    const card = e.target.closest('.card-wrapper');
+    if (!card) return;
+    
+    // Event listener is on document; it survives DOM re-renders
+    const task_id = card.dataset.taskId;
+    e.dataTransfer.effectAllowed = 'move';
+});
+```
+
+One listener on `document` (or `body`) with `e.target.closest()` to find the relevant element. All drag events use this pattern.
+
+**dragstart ghost capture timing**
+
+When drag starts, the browser captures a "ghost" image of the dragged element. If you add a `.dragging` class (with `opacity: 0.35`) in the dragstart handler, the ghost will be captured as semi-transparent.
+
+Fix: defer the class addition by one event loop tick:
+
+```javascript
+document.addEventListener('dragstart', function(e) {
+    const card = e.target.closest('.card-wrapper');
+    setTimeout(() => {
+        card.classList.add('dragging');  // Defer by one tick
+    }, 0);
+    // Browser captures ghost *before* this runs
+});
+```
+
+The undimmed card is captured as the ghost; then the `.dragging` class dims it in the UI.
+
+**draggable=True on parent, clicks on children**
+
+Setting `draggable=True` on a card wrapper makes the whole card draggable, but interactive children (buttons, checkboxes) still receive click events normally. A drag requires sustained mouse movement; a short mousedown+mouseup is still a click. The two interactions coexist:
+
+```python
+html.Div(
+    className='card-wrapper',
+    draggable=True,  # Card is draggable
+    children=[
+        html.Input(
+            type='checkbox',
+            className='complete-checkbox',
+            n_clicks=0  # But this still receives clicks normally
+        ),
+        html.Div("Task title")
+    ]
+)
+```
+
+**Sibling-not-child pattern for click isolation**
+
+If a child element's click should NOT bubble to a pattern-matched parent with `n_clicks`, make it a sibling instead. In Stride, the complete-task checkbox was moved from inside the task-card to a sibling:
+
+```python
+html.Div(
+    className='card-wrapper',
+    children=[
+        html.Input(
+            type='checkbox',
+            id={'type': 'complete-cb', 'index': task_id},
+            className='complete-checkbox'
+            # Now a sibling, not nested in the card
+        ),
+        html.Div(
+            id={'type': 'task-card', 'index': task_id},
+            className='card-content',
+            children=[...]
+        )
+    ]
+)
+```
+
+The checkbox is positioned via CSS (absolute positioning) to appear inside the card visually, but sibling status means its click events don't bubble through the card to any parent pattern-matched callbacks.
+
+---
+
+## 11. Interview Cheat-Sheet
 
 **What Dash is:**
 "Dash compiles Python into React components. You write a layout (a function that returns a component tree) and callbacks (Python functions that recompute component values when inputs change). The browser receives JSON; the server handles all logic."
