@@ -266,9 +266,12 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
         className="card-move-wrapper",
     )
 
-    # Wrapper positions the move flyout as an absolute overlay on the card
+    # Wrapper positions the move flyout as an absolute overlay on the card.
+    # draggable=True enables HTML5 native drag; data-task-id is read by dnd.js.
     return html.Div(
         [card_div, move_flyout],
         className="card-wrapper",
         style={"position": "relative"},
+        draggable=True,
+        **{"data-task-id": task_id},
     )
