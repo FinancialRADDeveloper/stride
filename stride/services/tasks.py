@@ -72,6 +72,7 @@ def _row_to_task(
         description=row["description"] or "",
         priority=row["priority"],
         size=row["size"],
+        category_id=row["category_id"] or "personal",
         estimate_min=row["estimate_min"],
         time_of_day=row["time_of_day"],
         day_key=row["day_key"],
