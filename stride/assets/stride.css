@@ -980,3 +980,27 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   color: var(--muted);
   word-break: break-all;
 }
+
+/* ============================================================
+   Phase 4 — Drag and drop
+   ============================================================ */
+
+/* Cards show a grab cursor to signal draggability */
+.card-wrapper {
+  cursor: grab;
+}
+
+/* Dim the card being dragged (class applied after dragstart) */
+.card-wrapper.dragging {
+  opacity: 0.35;
+  cursor: grabbing;
+}
+
+/* Column highlighted as an active drop target */
+.day-column--drop-active .col-cards {
+  background: rgba(99, 102, 241, 0.05);
+  outline: 2px dashed rgba(99, 102, 241, 0.35);
+  outline-offset: -4px;
+  border-radius: var(--radius-card);
+  min-height: 80px;
+}

@@ -62,6 +62,7 @@ def _layout():
                 dcc.Store(id="store-selected", data=None),
                 dcc.Store(id="store-week-offset", data=0),
                 dcc.Store(id="store-show-done", data=True),
+                dcc.Store(id="store-dnd-drop", data=None),
                 # Tick: triggers task refresh every 60 seconds
                 dcc.Interval(id="tick", interval=60_000, n_intervals=0),
             ],

@@ -160,17 +160,18 @@ def _day_column(
         )
     )
 
-    # Drop zone wrapper (data attribute for DnD)
     card_stack = html.Div(
         card_children,
         className="col-cards",
         id={"type": "col-drop", "day_key": day_key},
-        **{"data-drop-day": day_key},
     )
 
+    # data-drop-day on the outer column so the entire column (header + cards)
+    # is a drop target; dnd.js reads this attribute to know the destination day.
     return html.Div(
         [header, card_stack],
         className=col_classes,
+        **{"data-drop-day": day_key},
     )
 
 

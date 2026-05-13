@@ -8,7 +8,7 @@ from dash import Input, Output, State, callback, no_update
 from dash.exceptions import PreventUpdate
 
 from stride.db import app_db
-from stride.services.tasks import list_tasks
+from stride.services.tasks import list_tasks, move_task as svc_move
 from stride.ui.components.board import _week_days, board as render_board
 
 
@@ -83,6 +83,26 @@ def register_callbacks(app):
     )
     def update_date_range(week_offset):
         return _date_range_label(week_offset or 0)
+
+    @app.callback(
+        Output("store-tasks", "data", allow_duplicate=True),
+        Input("store-dnd-drop", "data"),
+        State("store-week-offset", "data"),
+        prevent_initial_call=True,
+    )
+    def on_dnd_drop(drop_data, week_offset):
+        if not drop_data:
+            raise PreventUpdate
+        task_id = drop_data.get("task_id")
+        to_day_key = drop_data.get("to_day_key")
+        if not task_id or not to_day_key:
+            raise PreventUpdate
+        conn = app_db()
+        svc_move(conn, task_id, to_day_key)
+        days = _week_days(week_offset or 0)
+        day_keys = [d.isoformat() for d in days]
+        tasks = list_tasks(conn, day_keys=day_keys, include_done=True, full=True)
+        return [t.model_dump() for t in tasks]
 
     @app.callback(
         Output("board-inner", "children"),
