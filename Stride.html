@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stride — day board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@1,14,400;1,14,500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f3ecdc;
+    --bg-2: #ece3d0;
+    --surface: #fbf7ee;
+    --surface-2: #ffffff;
+    --ink: #16181d;
+    --ink-2: #3a3f4a;
+    --muted: #707684;
+    --line: rgba(20, 22, 28, 0.10);
+    --line-soft: rgba(20, 22, 28, 0.06);
+    --coral: #d94a5e;
+    --coral-soft: #f7d9dd;
+    --navy: #2a4a7f;
+    --navy-soft: #d9e1ee;
+    --olive: #4f7a3b;
+    --olive-soft: #dde5cf;
+    --amber: #c98521;
+    --amber-soft: #f3e0bf;
+    --violet: #6a4ea3;
+    --violet-soft: #e3dbef;
+    --radius: 10px;
+    --radius-card: 12px;
+    --shadow-card: 0 1px 0 rgba(20,22,28,0.04), 0 1px 2px rgba(20,22,28,0.04);
+    --shadow-card-hover: 0 1px 0 rgba(20,22,28,0.04), 0 6px 18px rgba(20,22,28,0.10);
+    --shadow-panel: 0 24px 48px rgba(20,22,28,0.18), 0 2px 8px rgba(20,22,28,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+  }
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+  input:focus, textarea:focus, select:focus, button:focus { outline: none; }
+  ::selection { background: rgba(217, 74, 94, 0.20); }
+  .mono { font-family: "Geist Mono", ui-monospace, monospace; font-feature-settings: "tnum"; }
+  .serif { font-family: "Newsreader", Georgia, serif; font-style: italic; }
+  #root { height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "categories": {
+    "build": {
+      "name": "Build",
+      "color": "#6a4ea3"
+    },
+    "work": {
+      "name": "Work",
+      "color": "#2a4a7f"
+    },
+    "home": {
+      "name": "Home",
+      "color": "#4f7a3b"
+    },
+    "admin": {
+      "name": "Admin",
+      "color": "#c98521"
+    },
+    "health": {
+      "name": "Health",
+      "color": "#d94a5e"
+    },
+    "personal": {
+      "name": "Personal",
+      "color": "#2d8f8b"
+    }
+  },
+  "showLegend": true,
+  "showStaleRibbon": false,
+  "calendarAccounts": [
+    {
+      "id": "g_me",
+      "provider": "google",
+      "email": "alan@gmail.com",
+      "label": "Personal Google",
+      "connected": true,
+      "calendars": [
+        {
+          "id": "g_me_primary",
+          "name": "Alan Russell",
+          "color": "#2a4a7f",
+          "visible": true,
+          "role": "owner"
+        },
+        {
+          "id": "g_me_tasks",
+          "name": "Tasks",
+          "color": "#6a4ea3",
+          "visible": true,
+          "role": "owner"
+        },
+        {
+          "id": "g_me_family",
+          "name": "Family · shared",
+          "color": "#d94a5e",
+          "visible": true,
+          "role": "writer"
+        },
+        {
+          "id": "g_me_steph",
+          "name": "Stephanie",
+          "color": "#c98521",
+          "visible": true,
+          "role": "reader"
+        },
+        {
+          "id": "g_me_holidays",
+          "name": "UK Holidays",
+          "color": "#707684",
+          "visible": true,
+          "role": "reader"
+        }
+      ]
+    },
+    {
+      "id": "o_work",
+      "provider": "outlook",
+      "email": "alan.russell@axiomix.com",
+      "label": "Axiomix Work",
+      "connected": true,
+      "calendars": [
+        {
+          "id": "o_work_primary",
+          "name": "Calendar",
+          "color": "#2d8f8b",
+          "visible": true,
+          "role": "owner"
+        },
+        {
+          "id": "o_work_team",
+          "name": "Team CTO",
+          "color": "#4f7a3b",
+          "visible": true,
+          "role": "writer"
+        }
+      ]
+    }
+  ],
+  "taskTargetPersonal": "g_me_tasks",
+  "taskTargetShared": "g_me_family"
+}/*EDITMODE-END*/;
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react" src="stride/tweaks-panel.jsx"></script>
+<script type="text/babel" data-presets="react" src="stride/util.jsx"></script>
+<script type="text/babel" data-presets="react" src="stride/card.jsx"></script>
+<script type="text/babel" data-presets="react" src="stride/detail.jsx"></script>
+<script type="text/babel" data-presets="react" src="stride/app.jsx"></script>
+</body>
+</html>
