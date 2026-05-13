@@ -45,6 +45,7 @@ def _day_column(
     day: datetime.date,
     tasks: list[dict],
     is_first: bool,
+    week_offset: int = 0,
 ) -> html.Div:
     """Render one day column."""
     today = datetime.date.today()
@@ -144,7 +145,7 @@ def _day_column(
         )
     else:
         for t in tasks:
-            card_children.append(task_card(t))
+            card_children.append(task_card(t, week_offset=week_offset))
 
     # Composer (hidden by default, shown via callback)
     card_children.append(composer(day_key))
@@ -201,7 +202,7 @@ def board(tasks: list[dict] | None = None, week_offset: int = 0) -> html.Div:
         ))
 
     columns = [
-        _day_column(day, tasks_by_day[day.isoformat()], i == 0)
+        _day_column(day, tasks_by_day[day.isoformat()], i == 0, week_offset=week_offset)
         for i, day in enumerate(days)
     ]
 

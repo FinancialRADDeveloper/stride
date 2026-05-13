@@ -1,4 +1,4 @@
-"""Card-level callbacks: click to select, toggle done, add task button."""
+"""Card-level callbacks: click to select, toggle done, add task button, move menu."""
 
 from __future__ import annotations
 
@@ -6,7 +6,12 @@ from dash import Input, Output, State, ALL, MATCH, callback, no_update, ctx
 from dash.exceptions import PreventUpdate
 
 from stride.db import app_db
-from stride.services.tasks import toggle_done as svc_toggle_done
+from stride.services.tasks import (
+    list_tasks,
+    move_task as svc_move,
+    toggle_done as svc_toggle_done,
+)
+from stride.ui.components.board import _week_days
 
 
 def register_callbacks(app):
@@ -60,4 +65,33 @@ def register_callbacks(app):
                         t["done"] = not t.get("done", False)
                     updated.append(t)
                 return updated
+        raise PreventUpdate
+
+    # ------------------------------------------------------------------
+    # Move-to menu: btn-move-to fires when a day item is clicked
+    # ------------------------------------------------------------------
+    @app.callback(
+        Output("store-tasks", "data", allow_duplicate=True),
+        Input({"type": "btn-move-to", "task_id": ALL, "day_key": ALL}, "n_clicks"),
+        State("store-week-offset", "data"),
+        prevent_initial_call=True,
+    )
+    def on_move_to(n_clicks_list, week_offset):
+        if not ctx.triggered_id:
+            raise PreventUpdate
+        triggered = ctx.triggered_id
+        if not isinstance(triggered, dict) or triggered.get("type") != "btn-move-to":
+            raise PreventUpdate
+        # Only fire on a genuine click
+        for tc in ctx.triggered:
+            if tc["value"] and tc["value"] > 0:
+                task_id = triggered["task_id"]
+                to_day_key = triggered["day_key"]
+                conn = app_db()
+                svc_move(conn, task_id, to_day_key)
+                # Refresh task list for the visible window
+                days = _week_days(week_offset or 0)
+                day_keys = [d.isoformat() for d in days]
+                tasks = list_tasks(conn, day_keys=day_keys, include_done=True, full=True)
+                return [t.model_dump() for t in tasks]
         raise PreventUpdate
