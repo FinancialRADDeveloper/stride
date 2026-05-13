@@ -1,10 +1,10 @@
-"""Detail drawer component — read-only in Phase 2."""
+"""Detail drawer component — editable in Phase 3."""
 
 from __future__ import annotations
 
 import datetime
 
-from dash import html
+from dash import html, dcc
 import dash_mantine_components as dmc
 
 from stride.ui.theme import PRIORITY_COLOURS, CATEGORY_COLOURS
@@ -35,6 +35,8 @@ _EVENT_KIND_LABEL = {
     "deleted": "Deleted",
 }
 
+_CATEGORIES = list(CATEGORY_COLOURS.keys())
+
 
 def _fmt_minutes(minutes: int | None) -> str:
     if minutes is None:
@@ -44,16 +46,6 @@ def _fmt_minutes(minutes: int | None) -> str:
     h = minutes // 60
     m = minutes % 60
     return f"{h}h {m}m" if m else f"{h}h"
-
-
-def _field_row(label: str, value: str) -> html.Div:
-    return html.Div(
-        className="detail-field",
-        children=[
-            html.Div(label, className="detail-field-label mono"),
-            html.Div(str(value), className="detail-field-value"),
-        ],
-    )
 
 
 def _event_row(event: dict) -> html.Div:
@@ -81,7 +73,11 @@ def _event_row(event: dict) -> html.Div:
         detail_text = f"{from_day} → {to_day}"
     elif kind == "edited":
         field = payload.get("field", "?")
-        detail_text = f"field: {field}"
+        old_val = payload.get("from", "")
+        new_val = payload.get("to", "")
+        old_str = f"'{old_val}'" if isinstance(old_val, str) and len(str(old_val)) < 30 else str(old_val)
+        new_str = f"'{new_val}'" if isinstance(new_val, str) and len(str(new_val)) < 30 else str(new_val)
+        detail_text = f"{field}: {old_str} → {new_str}"
     else:
         detail_text = ""
 
@@ -118,16 +114,50 @@ def _event_row(event: dict) -> html.Div:
 
 
 def detail_drawer() -> dmc.Drawer:
-    """Return the right-side detail drawer.
+    """Return the right-side detail drawer with editable fields.
 
-    Populated by the detail_cb callbacks when store-selected changes.
-    Read-only in Phase 2 — Phase 3 makes it editable.
+    Populated and made interactive by detail_cb callbacks.
     """
+    # Priority segmented control options
+    priority_data = [
+        {"value": "P1", "label": "P1 Critical"},
+        {"value": "P2", "label": "P2 High"},
+        {"value": "P3", "label": "P3 Normal"},
+        {"value": "P4", "label": "P4 Low"},
+    ]
+
+    # Size segmented control options
+    size_data = [
+        {"value": "XS", "label": "XS"},
+        {"value": "S", "label": "S"},
+        {"value": "M", "label": "M"},
+        {"value": "L", "label": "L"},
+        {"value": "XL", "label": "XL"},
+    ]
+
+    # Category chips
+    category_chips = []
+    for cat in _CATEGORIES:
+        colour = CATEGORY_COLOURS.get(cat, "#9ca3af")
+        category_chips.append(
+            dmc.Chip(
+                cat.capitalize(),
+                value=cat,
+                styles={
+                    "label": {
+                        "textTransform": "capitalize",
+                        "fontSize": "12px",
+                    }
+                },
+            )
+        )
+
     return dmc.Drawer(
         id="detail-drawer",
         position="right",
         size=440,
         withCloseButton=False,
+        keepMounted=True,
         overlayProps={"opacity": 0, "blur": 0},
         styles={
             "body": {"padding": 0, "overflowY": "auto"},
@@ -158,11 +188,155 @@ def detail_drawer() -> dmc.Drawer:
                 id="detail-body",
                 className="detail-body",
                 children=[
-                    html.Div(id="detail-title", className="detail-title"),
-                    html.Div(id="detail-description", className="detail-description"),
-                    html.Div(id="detail-fields", className="detail-fields"),
-                    html.Div(id="detail-history", className="detail-history"),
+                    # Title — editable Textarea
+                    html.Div(
+                        className="detail-section",
+                        children=[
+                            dmc.Textarea(
+                                id="detail-title",
+                                placeholder="Task title…",
+                                autosize=True,
+                                minRows=1,
+                                maxRows=3,
+                                styles={
+                                    "input": {
+                                        "fontSize": "20px",
+                                        "fontWeight": "600",
+                                        "border": "none",
+                                        "borderBottom": "1px solid #e5e7eb",
+                                        "borderRadius": "0",
+                                        "padding": "4px 0 8px",
+                                        "background": "transparent",
+                                        "resize": "none",
+                                    },
+                                    "root": {"marginBottom": "12px"},
+                                },
+                            ),
+                        ],
+                    ),
+                    # Description — editable Textarea
+                    html.Div(
+                        className="detail-section",
+                        children=[
+                            dmc.Textarea(
+                                id="detail-description",
+                                placeholder="Add a description…",
+                                autosize=True,
+                                minRows=2,
+                                styles={
+                                    "input": {
+                                        "fontSize": "13px",
+                                        "border": "1px solid #e5e7eb",
+                                        "borderRadius": "6px",
+                                        "background": "#fafaf8",
+                                        "resize": "none",
+                                    },
+                                    "root": {"marginBottom": "16px"},
+                                },
+                            ),
+                        ],
+                    ),
+                    # Fields grid — editable
+                    html.Div(
+                        id="detail-fields",
+                        className="detail-fields-editable",
+                        children=[
+                            # Priority
+                            html.Div(
+                                className="detail-field-row",
+                                children=[
+                                    html.Div("Priority", className="detail-field-label mono"),
+                                    dmc.SegmentedControl(
+                                        id="detail-priority",
+                                        data=priority_data,
+                                        value="P3",
+                                        size="xs",
+                                        styles={
+                                            "root": {"width": "100%"},
+                                        },
+                                    ),
+                                ],
+                            ),
+                            # Size
+                            html.Div(
+                                className="detail-field-row",
+                                children=[
+                                    html.Div("Size", className="detail-field-label mono"),
+                                    dmc.SegmentedControl(
+                                        id="detail-size",
+                                        data=size_data,
+                                        value="M",
+                                        size="xs",
+                                        styles={
+                                            "root": {"width": "100%"},
+                                        },
+                                    ),
+                                ],
+                            ),
+                            # Category
+                            html.Div(
+                                className="detail-field-row",
+                                children=[
+                                    html.Div("Category", className="detail-field-label mono"),
+                                    dmc.ChipGroup(
+                                        id="detail-category",
+                                        multiple=False,
+                                        children=category_chips,
+                                    ),
+                                ],
+                            ),
+                            # Estimate
+                            html.Div(
+                                className="detail-field-row",
+                                children=[
+                                    html.Div("Estimate", className="detail-field-label mono"),
+                                    dmc.NumberInput(
+                                        id="detail-estimate",
+                                        placeholder="minutes",
+                                        suffix=" min",
+                                        min=0,
+                                        step=5,
+                                        styles={
+                                            "input": {"fontSize": "13px"},
+                                            "root": {"width": "160px"},
+                                        },
+                                    ),
+                                ],
+                            ),
+                            # Time of day
+                            html.Div(
+                                className="detail-field-row",
+                                children=[
+                                    html.Div("Time of day", className="detail-field-label mono"),
+                                    dmc.TimeInput(
+                                        id="detail-time",
+                                        styles={
+                                            "input": {"fontSize": "13px"},
+                                            "root": {"width": "160px"},
+                                        },
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                    # Counters block
                     html.Div(id="detail-counters", className="detail-counters"),
+                    # History
+                    html.Div(id="detail-history", className="detail-history"),
+                    # Delete button
+                    html.Div(
+                        className="detail-delete-row",
+                        children=[
+                            dmc.Button(
+                                "Delete task",
+                                id="detail-delete",
+                                color="red",
+                                variant="subtle",
+                                size="xs",
+                                styles={"root": {"marginTop": "8px"}},
+                            ),
+                        ],
+                    ),
                 ],
             ),
         ],
@@ -170,9 +344,11 @@ def detail_drawer() -> dmc.Drawer:
 
 
 def build_detail_content(task: dict) -> tuple:
-    """Build the content elements from a task dict.
+    """Build the dynamic content elements from a task dict.
 
-    Returns (header_meta, title, description, fields, history, counters).
+    Returns (header_meta, title_value, description_value, priority_value,
+             size_value, category_value, estimate_value, time_value,
+             counters_el, history_el).
     """
     task_id = task.get("id", "")
     title = task.get("title", "")
@@ -186,10 +362,8 @@ def build_detail_content(task: dict) -> tuple:
     age_days = task.get("age_days", 0)
     move_count = task.get("move_count", 0)
     edit_count = task.get("edit_count", 0)
+    is_stale = task.get("is_stale", False)
     history = task.get("history", [])
-
-    pri_colour = PRIORITY_COLOURS.get(priority, "#9ca3af")
-    cat_colour = CATEGORY_COLOURS.get(category_id, "#9ca3af")
 
     # Header meta
     age_label = "today" if age_days == 0 else f"{age_days}d ago"
@@ -200,27 +374,38 @@ def build_detail_content(task: dict) -> tuple:
         ]
     )
 
-    # Title
-    title_el = html.Div(
-        title,
-        className="detail-title-text" + (" detail-title-text--done" if done else ""),
-    )
+    # Counters block with stale warning
+    counter_children = [
+        html.Div([
+            html.Div("Age", className="counter-label mono"),
+            html.Div("<1d" if age_days == 0 else f"{age_days}d", className="counter-value mono"),
+        ]),
+        html.Div([
+            html.Div("Moves", className="counter-label mono"),
+            html.Div(str(move_count), className="counter-value mono"),
+        ]),
+        html.Div([
+            html.Div("Edits", className="counter-label mono"),
+            html.Div(str(edit_count), className="counter-value mono"),
+        ]),
+        html.Div([
+            html.Div("Status", className="counter-label mono"),
+            html.Div("Done" if done else "Open", className="counter-value mono"),
+        ]),
+    ]
 
-    # Description
-    desc_el = html.P(description, className="detail-desc-text") if description else html.P(
-        "No description.", className="detail-desc-empty"
-    )
-
-    # Fields
-    fields_el = html.Div(
-        className="detail-fields-grid",
+    counters_el = html.Div(
+        className="detail-counters-block",
         children=[
-            _field_row("Priority", f"{priority} · {_PRIORITY_LABEL.get(priority, priority)}"),
-            _field_row("Size", f"{size} · {_SIZE_HINT.get(size, '')}"),
-            _field_row("Estimate", _fmt_minutes(estimate_min)),
-            _field_row("Time of day", time_of_day or "—"),
-            _field_row("Category", category_id),
-            _field_row("Status", "Done" if done else "Open"),
+            html.Div(
+                className="detail-counters-grid",
+                children=counter_children,
+            ),
+            # Stale warning chip
+            html.Div(
+                "Stale — moved 3+ times",
+                className="detail-stale-warning mono",
+            ) if is_stale else None,
         ],
     )
 
@@ -241,27 +426,15 @@ def build_detail_content(task: dict) -> tuple:
         ],
     )
 
-    # Counters
-    counters_el = html.Div(
-        className="detail-counters-grid",
-        children=[
-            html.Div([
-                html.Div("Age", className="counter-label mono"),
-                html.Div("<1d" if age_days == 0 else f"{age_days}d", className="counter-value mono"),
-            ]),
-            html.Div([
-                html.Div("Moves", className="counter-label mono"),
-                html.Div(str(move_count), className="counter-value mono"),
-            ]),
-            html.Div([
-                html.Div("Edits", className="counter-label mono"),
-                html.Div(str(edit_count), className="counter-value mono"),
-            ]),
-            html.Div([
-                html.Div("Status", className="counter-label mono"),
-                html.Div("Done" if done else "Open", className="counter-value mono"),
-            ]),
-        ],
+    return (
+        header_meta,
+        title,
+        description,
+        priority,
+        size,
+        category_id,
+        estimate_min,
+        time_of_day or "",
+        counters_el,
+        history_el,
     )
-
-    return header_meta, title_el, desc_el, fields_el, history_el, counters_el

@@ -2,9 +2,37 @@
 
 from __future__ import annotations
 
+import datetime
+
 from dash import html
 
 from stride.ui.theme import PRIORITY_COLOURS, CATEGORY_COLOURS
+
+_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+_MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def _week_days_for_card(week_offset: int = 0) -> list[datetime.date]:
+    """Return the 6 visible day dates for the given week offset."""
+    today = datetime.date.today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    start = monday + datetime.timedelta(days=6 * week_offset)
+    return [start + datetime.timedelta(days=i) for i in range(6)]
+
+
+def _day_label(day: datetime.date) -> str:
+    today = datetime.date.today()
+    diff = (day - today).days
+    if diff == 0:
+        return "Today"
+    if diff == 1:
+        return "Tomorrow"
+    if diff == -1:
+        return "Yesterday"
+    day_name = _DAY_NAMES[day.weekday()]
+    date_str = f"{day.day} {_MONTH_SHORT[day.month - 1]}"
+    return f"{day_name} {date_str}"
 
 
 # Background tints for priority badges
@@ -41,10 +69,11 @@ def _fmt_minutes(minutes: int | None) -> str:
     return f"{h}h {m}m" if m else f"{h}h"
 
 
-def task_card(task: dict) -> html.Div:
+def task_card(task: dict, week_offset: int = 0) -> html.Div:
     """Render a single task card.
 
     ID is pattern-matched: {'type': 'card', 'task_id': task['id']}
+    week_offset is used to generate move-to menu items for other days.
     """
     task_id = task["id"]
     priority = task.get("priority", "P3")
@@ -58,6 +87,7 @@ def task_card(task: dict) -> html.Div:
     title = task.get("title", "")
     description = task.get("description", "")
     category_id = task.get("category_id", "personal")
+    current_day_key = task.get("day_key", "")
 
     pri_colour = PRIORITY_COLOURS.get(priority, "#9ca3af")
     pri_bg = _PRIORITY_BG.get(priority, "#f9fafb")
@@ -200,9 +230,45 @@ def task_card(task: dict) -> html.Div:
         html.Div(meta_chips, className="card-meta")
     )
 
-    return html.Div(
+    card_div = html.Div(
         children=children,
         id={"type": "card", "task_id": task_id},
         className=card_classes,
         n_clicks=0,
+    )
+
+    # Move-to flyout — plain HTML buttons in a CSS hover-shown dropdown.
+    # Keeps Dash pattern-matched IDs on each day button without Mantine context issues.
+    visible_days = _week_days_for_card(week_offset)
+    day_buttons = []
+    for day in visible_days:
+        day_key = day.isoformat()
+        if day_key == current_day_key:
+            continue  # skip current day
+        label = _day_label(day)
+        day_buttons.append(
+            html.Button(
+                label,
+                id={"type": "btn-move-to", "task_id": task_id, "day_key": day_key},
+                className="move-day-btn",
+                n_clicks=0,
+            )
+        )
+
+    move_flyout = html.Div(
+        [
+            html.Button("→", className="card-move-btn", title="Move to…"),
+            html.Div(
+                [html.Div("Move to", className="move-menu-label mono")] + day_buttons,
+                className="move-menu-dropdown",
+            ),
+        ],
+        className="card-move-wrapper",
+    )
+
+    # Wrapper positions the move flyout as an absolute overlay on the card
+    return html.Div(
+        [card_div, move_flyout],
+        className="card-wrapper",
+        style={"position": "relative"},
     )
