@@ -226,6 +226,50 @@ def create_task(
     return _row_to_task(row, move_count=0, edit_count=0)
 
 
+def delete_task(conn: sqlite3.Connection, task_id: str) -> None:
+    """Delete a task and all its events (cascade).
+
+    Copies the latest snapshot into deleted_tasks before deletion so the
+    tombstone survives for audit / calendar reconcile.
+    """
+    row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    if row is None:
+        return  # already gone
+
+    now = _now_ms()
+    with conn:
+        # Copy to tombstone table if it exists (migration may not have run yet)
+        try:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO deleted_tasks
+                  (id, title, description, priority, size, category_id,
+                   estimate_min, time_of_day, day_key, done,
+                   created_at, updated_at, deleted_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    row["id"],
+                    row["title"],
+                    row["description"],
+                    row["priority"],
+                    row["size"],
+                    row["category_id"],
+                    row["estimate_min"],
+                    row["time_of_day"],
+                    row["day_key"],
+                    row["done"],
+                    row["created_at"],
+                    row["updated_at"],
+                    now,
+                ),
+            )
+        except Exception:
+            pass  # deleted_tasks table may not exist in older schemas
+
+        conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+
+
 def list_tasks(
     conn: sqlite3.Connection,
     *,
