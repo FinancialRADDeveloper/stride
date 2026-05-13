@@ -1,0 +1,32 @@
+# Extracted zips / temp
+tmp/
+Self Organisation Hub/
+Self Organisation Hub_*/
+
+# Archives
+*.zip
+
+# Python app (future)
+data/
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.uv/
+uv.lock
+*.db
+*.db-shm
+*.db-wal
+
+# OAuth / secrets
+data/.fernet.key
+data/client_secret.json
+data/token*.json
+
+# Output
+output/pdf/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
