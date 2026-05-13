@@ -815,3 +815,168 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ---- Phase 3 additions ---- */
+
+/* Card wrapper — provides relative positioning for the move button overlay */
+.card-wrapper {
+  position: relative;
+}
+
+/* Move flyout container — absolutely positioned top-right of the card */
+.card-move-wrapper {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 10;
+}
+
+/* Card move button — hidden by default, visible on card-wrapper hover */
+.card-move-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 100ms ease, background 100ms ease;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.card-wrapper:hover .card-move-btn {
+  opacity: 1;
+}
+
+.card-move-btn:hover {
+  background: var(--line-soft);
+  color: var(--ink);
+}
+
+/* Move dropdown — hidden by default, shown when card-move-wrapper is hovered */
+.move-menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  min-width: 140px;
+  z-index: 100;
+  padding: 4px 0;
+}
+
+.card-move-wrapper:hover .card-move-btn {
+  opacity: 1;
+}
+
+.card-move-wrapper:hover .move-menu-dropdown {
+  display: block;
+}
+
+.move-menu-label {
+  font-size: 10px;
+  color: var(--muted);
+  padding: 4px 10px 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.move-day-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 0;
+}
+
+.move-day-btn:hover {
+  background: var(--line-soft);
+  color: var(--ink);
+}
+
+/* Stale card: amber left border */
+.task-card.task-card--stale {
+  border-left: 3px solid var(--amber);
+}
+
+/* Editable fields section */
+.detail-fields-editable {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.detail-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-section {
+  margin-bottom: 4px;
+}
+
+/* Counters block with stale warning */
+.detail-counters-block {
+  margin-bottom: 20px;
+}
+
+.detail-counters {
+  margin-bottom: 0;
+}
+
+.detail-stale-warning {
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: #fef3c7;
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Delete row */
+.detail-delete-row {
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+  margin-top: 8px;
+}
+
+/* Timeline */
+.detail-timeline {
+  margin-bottom: 20px;
+}
+
+.detail-timeline .detail-section-heading {
+  margin-bottom: 8px;
+}
+
+/* Improved event row detail text */
+.event-detail {
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-all;
+}
