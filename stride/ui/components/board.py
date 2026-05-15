@@ -202,10 +202,13 @@ def board(tasks: list[dict] | None = None, week_offset: int = 0) -> html.Div:
             t.get("created_at", 0),
         ))
 
-    columns = [
-        _day_column(day, tasks_by_day[day.isoformat()], i == 0, week_offset=week_offset)
-        for i, day in enumerate(days)
-    ]
+    today = datetime.date.today()
+    columns = []
+    for day in days:
+        day_tasks = tasks_by_day[day.isoformat()]
+        if day < today and not day_tasks:
+            continue
+        columns.append(_day_column(day, day_tasks, len(columns) == 0, week_offset=week_offset))
 
     return html.Div(
         html.Div(columns, className="board-inner"),
