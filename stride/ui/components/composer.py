@@ -53,6 +53,7 @@ def composer(day_key: str) -> html.Div:
             ),
             html.Div(
                 className="composer-pickers",
+                style={"display": "none"},
                 children=[
                     html.Div(
                         className="composer-picker-group",
@@ -96,6 +97,12 @@ def composer(day_key: str) -> html.Div:
             html.Div(
                 className="composer-actions",
                 children=[
+                    html.Button(
+                        "▾ Details",
+                        className="btn-expand-composer",
+                        type="button",
+                        n_clicks=0,
+                    ),
                     html.Button(
                         "Cancel",
                         id={"type": "btn-cancel-add", "day_key": day_key},

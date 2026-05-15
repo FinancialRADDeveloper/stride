@@ -651,6 +651,20 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   margin-top: 8px;
 }
 
+.btn-expand-composer {
+  margin-right: auto;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--muted);
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-mono);
+}
+
+.btn-expand-composer:hover { background: var(--line-soft); color: var(--ink); }
+
 .btn-cancel {
   padding: 4px 10px;
   font-size: 12px;
