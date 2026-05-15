@@ -29,18 +29,22 @@ def create_app() -> dash.Dash:
     app.layout = _layout
 
     # Register all callbacks
-    from stride.ui.callbacks import board_cb, card_cb, composer_cb, detail_cb
+    from stride.ui.callbacks import board_cb, card_cb, composer_cb, detail_cb, kb_cb, theme_cb
     board_cb.register_callbacks(app)
     card_cb.register_callbacks(app)
     composer_cb.register_callbacks(app)
     detail_cb.register_callbacks(app)
+    kb_cb.register_callbacks(app)
+    theme_cb.register_callbacks(app)
 
     return app
 
 
 def _layout():
     return dmc.MantineProvider(
+        id="mantine-provider",
         theme=STRIDE_THEME,
+        forceColorScheme="light",
         children=html.Div(
             id="stride-root",
             children=[
@@ -63,6 +67,8 @@ def _layout():
                 dcc.Store(id="store-week-offset", data=0),
                 dcc.Store(id="store-show-done", data=True),
                 dcc.Store(id="store-dnd-drop", data=None),
+                dcc.Store(id="store-kb-action", data=None),
+                dcc.Store(id="store-theme", data="light"),
                 # Tick: triggers task refresh every 60 seconds
                 dcc.Interval(id="tick", interval=60_000, n_intervals=0),
             ],
