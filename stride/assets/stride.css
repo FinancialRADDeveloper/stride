@@ -662,7 +662,7 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--muted);
-  width: 52px;
+  width: 72px;
   flex-shrink: 0;
 }
 
