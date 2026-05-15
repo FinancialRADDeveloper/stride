@@ -621,6 +621,29 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 
 .composer-input::placeholder { color: var(--muted); }
 
+/* Composer pickers row */
+.composer-pickers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+
+.composer-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.composer-picker-label {
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  width: 52px;
+  flex-shrink: 0;
+}
+
 .composer-actions {
   display: flex;
   justify-content: flex-end;
@@ -1011,4 +1034,59 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   outline-offset: -4px;
   border-radius: var(--radius-card);
   min-height: 80px;
+}
+
+/* ============================================================
+   Dark mode — CSS variable overrides
+   MantineProvider sets [data-mantine-color-scheme="dark"] on
+   the HTML root when forceColorScheme="dark".
+   ============================================================ */
+
+[data-mantine-color-scheme="dark"] {
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --surface-2: #22263a;
+  --ink:       #e2e8f0;
+  --ink-2:     #a8b2c1;
+  --muted:     #5c6680;
+  --line:      #2e3249;
+  --line-soft: #1e2133;
+}
+
+[data-mantine-color-scheme="dark"] body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+[data-mantine-color-scheme="dark"] .topbar {
+  background: var(--bg);
+  border-bottom-color: var(--line);
+}
+
+[data-mantine-color-scheme="dark"] .day-column {
+  border-right-color: var(--line);
+}
+
+[data-mantine-color-scheme="dark"] .day-column--first {
+  border-left-color: var(--line);
+}
+
+[data-mantine-color-scheme="dark"] .task-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+[data-mantine-color-scheme="dark"] .composer {
+  background: var(--surface);
+  border-color: var(--ink-2);
+}
+
+[data-mantine-color-scheme="dark"] .composer-input {
+  color: var(--ink);
+  border-bottom-color: var(--line);
+}
+
+[data-mantine-color-scheme="dark"] .move-menu-dropdown {
+  background: var(--surface);
+  border-color: var(--line);
 }

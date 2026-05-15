@@ -656,7 +656,90 @@ The checkbox is positioned via CSS (absolute positioning) to appear inside the c
 
 ---
 
-## 11. Interview Cheat-Sheet
+## 11. Dark Mode and Theme Switching (Phase 6)
+
+### MantineProvider `forceColorScheme`
+
+`dash-mantine-components` wraps the app in a `MantineProvider`. Setting `forceColorScheme="dark"` causes Mantine to write `data-mantine-color-scheme="dark"` on the `<html>` element. All Mantine CSS variables automatically flip to their dark variants because they use `[data-mantine-color-scheme="dark"]` attribute selectors under the hood.
+
+```python
+dmc.MantineProvider(
+    id="mantine-provider",
+    forceColorScheme="light",   # controlled by a callback
+    children=[...]
+)
+```
+
+To toggle dark/light from a callback, make `forceColorScheme` an Output and `dcc.Store` the current theme as State:
+
+```python
+@app.callback(
+    Output("store-theme", "data"),
+    Output("mantine-provider", "forceColorScheme"),
+    Input("btn-dark-mode", "n_clicks"),
+    State("store-theme", "data"),
+    prevent_initial_call=True,
+)
+def toggle_theme(n, current):
+    new = "dark" if current == "light" else "light"
+    return new, new
+```
+
+**Custom CSS dark mode:** Any rule that needs dark variants should live under `[data-mantine-color-scheme="dark"]`:
+
+```css
+[data-mantine-color-scheme="dark"] .my-card {
+    background: var(--mantine-color-dark-7);
+    color: var(--mantine-color-dark-0);
+}
+```
+
+### `window.dash_clientside.set_props` — JS→Dash without a round-trip
+
+`set_props` lets a JavaScript event handler write directly to a `dcc.Store` or any Dash component prop without a server round-trip. It bypasses the normal callback POST and triggers any Python callbacks that have that prop as an Input.
+
+```javascript
+window.dash_clientside.set_props('store-kb-action', {
+    data: { action: 'close', ts: Date.now() }
+});
+```
+
+This is the right pattern for keyboard shortcuts loaded as an asset file — the JS file handles `keydown` and notifies Dash, and a Python callback handles the logic:
+
+```python
+@app.callback(
+    Output("store-selected", "data", allow_duplicate=True),
+    Input("store-kb-action", "data"),
+    State("store-selected", "data"),
+    prevent_initial_call=True,
+)
+def handle_kb(kb, selected_id):
+    if kb and kb.get("action") == "close":
+        return None
+    raise PreventUpdate
+```
+
+**Why not clientside_callback?** `set_props` from an asset file is cleaner for global shortcuts because the JS file is always loaded (not tied to a specific component's lifecycle), handles `prevent_initial_call` implicitly, and avoids the clientside_callback function-naming boilerplate.
+
+### Component pruning — Output vs State in pattern callbacks
+
+Dash tracks which component props are "controlled" by callbacks (i.e., listed as Output). When a callback response includes a dynamically-rendered component whose prop is tracked as an Output, Dash **strips that prop** from the response to prevent conflicting writes.
+
+**The rule:** if a component ID appears as an `Output` in any callback, Dash owns that prop in dynamic renders. This causes it to disappear until the owning callback fires.
+
+**The fix for picker components:** keep picker IDs as `State`-only. Never list them as `Output`. Since the board callback rebuilds composer divs on every store update, if pickers were Outputs they would be pruned each rebuild.
+
+```python
+# WRONG — pickers as Output causes them to vanish after board re-renders
+Output({"type": "composer-priority", "day_key": MATCH}, "value")
+
+# RIGHT — read only as State; board callback is free to include them
+State({"type": "composer-priority", "day_key": MATCH}, "value"),
+```
+
+---
+
+## 12. Interview Cheat-Sheet
 
 **What Dash is:**
 "Dash compiles Python into React components. You write a layout (a function that returns a component tree) and callbacks (Python functions that recompute component values when inputs change). The browser receives JSON; the server handles all logic."

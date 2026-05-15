@@ -78,6 +78,15 @@ def topbar() -> html.Div:
                         title="Next period",
                         n_clicks=0,
                     ),
+                    html.Div(className="topbar-spacer"),
+                    # Dark mode toggle
+                    html.Button(
+                        "☾",
+                        id="btn-dark-mode",
+                        className="btn-icon",
+                        title="Toggle dark mode  (preserves session only)",
+                        n_clicks=0,
+                    ),
                 ],
             ),
         ],
