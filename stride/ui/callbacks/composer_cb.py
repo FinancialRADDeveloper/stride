@@ -39,15 +39,16 @@ def register_callbacks(app):
         Input({"type": "btn-confirm-add", "day_key": MATCH}, "n_clicks"),
         Input({"type": "input-new-task",  "day_key": MATCH}, "n_submit"),
         State({"type": "input-new-task",    "day_key": MATCH}, "value"),
-        State({"type": "composer-priority", "day_key": MATCH}, "value"),
-        State({"type": "composer-size",     "day_key": MATCH}, "value"),
-        State({"type": "composer-category", "day_key": MATCH}, "value"),
+        State({"type": "composer-priority",    "day_key": MATCH}, "value"),
+        State({"type": "composer-size",         "day_key": MATCH}, "value"),
+        State({"type": "composer-category",     "day_key": MATCH}, "value"),
+        State({"type": "composer-description",  "day_key": MATCH}, "value"),
         State("store-tasks", "data"),
         State("store-week-offset", "data"),
         prevent_initial_call=True,
     )
     def submit_new_task(confirm_clicks, n_submit, title, priority, size, category_id,
-                        current_tasks, week_offset):
+                        description, current_tasks, week_offset):
         triggered = ctx.triggered_id
         if not triggered:
             raise PreventUpdate
@@ -67,6 +68,7 @@ def register_callbacks(app):
             priority=priority or "P3",
             size=size or "M",
             category_id=category_id or "personal",
+            description=(description or "").strip(),
         )
 
         new_task_dict = new_task.model_dump()

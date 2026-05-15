@@ -92,6 +92,19 @@ def composer(day_key: str) -> html.Div:
                             ),
                         ],
                     ),
+                    html.Div(
+                        className="composer-picker-group composer-picker-group--desc",
+                        children=[
+                            html.Span("Description", className="composer-picker-label mono"),
+                            dcc.Textarea(
+                                id={"type": "composer-description", "day_key": day_key},
+                                className="composer-desc-input",
+                                placeholder="Optional notes…",
+                                rows=2,
+                                value="",
+                            ),
+                        ],
+                    ),
                 ],
             ),
             html.Div(

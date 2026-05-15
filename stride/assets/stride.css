@@ -635,6 +635,28 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   gap: 8px;
 }
 
+.composer-picker-group--desc {
+  align-items: flex-start;
+}
+
+.composer-desc-input {
+  flex: 1;
+  resize: vertical;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.composer-desc-input:focus {
+  outline: none;
+  border-color: var(--ink-2);
+}
+
 .composer-picker-label {
   font-size: 10px;
   letter-spacing: 0.5px;
