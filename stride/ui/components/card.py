@@ -120,27 +120,28 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
             )
         )
 
-    # Checkbox + title row
-    checkbox_classes = "card-checkbox"
-    if done:
-        checkbox_classes += " card-checkbox--done"
-
     title_classes = "card-title"
     if done:
         title_classes += " card-title--done"
+
+    # Checkbox is built separately and placed OUTSIDE task-card in the wrapper
+    # so its click doesn't bubble to the card div and open the detail drawer.
+    checkbox_classes = "card-checkbox"
+    if done:
+        checkbox_classes += " card-checkbox--done"
+    checkbox = html.Button(
+        "✓" if done else "",
+        id={"type": "btn-toggle-done", "task_id": task_id},
+        className=checkbox_classes,
+        n_clicks=0,
+        title="Reopen task" if done else "Complete task",
+        style={"borderColor": pri_colour, "background": pri_colour if done else "transparent"},
+    )
 
     children.append(
         html.Div(
             className="card-top-row",
             children=[
-                html.Button(
-                    "✓" if done else "",
-                    id={"type": "btn-toggle-done", "task_id": task_id},
-                    className=checkbox_classes,
-                    n_clicks=0,
-                    title="Reopen task" if done else "Complete task",
-                    style={"borderColor": pri_colour, "background": pri_colour if done else "transparent"},
-                ),
                 html.Div(
                     className="card-title-block",
                     children=[
@@ -237,14 +238,16 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
         n_clicks=0,
     )
 
-    # Move-to flyout — plain HTML buttons in a CSS hover-shown dropdown.
-    # Keeps Dash pattern-matched IDs on each day button without Mantine context issues.
+    # Move-to flyout — only show today and future days (never past dates).
+    today = datetime.date.today()
     visible_days = _week_days_for_card(week_offset)
     day_buttons = []
     for day in visible_days:
         day_key = day.isoformat()
         if day_key == current_day_key:
             continue  # skip current day
+        if day < today:
+            continue  # skip past days
         label = _day_label(day)
         day_buttons.append(
             html.Button(
@@ -266,10 +269,11 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
         className="card-move-wrapper",
     )
 
-    # Wrapper positions the move flyout as an absolute overlay on the card.
+    # Checkbox lives here (sibling of card_div) so its click doesn't bubble
+    # up through the card div and trigger the drawer-open callback.
     # draggable=True enables HTML5 native drag; data-task-id is read by dnd.js.
     return html.Div(
-        [card_div, move_flyout],
+        [card_div, checkbox, move_flyout],
         className="card-wrapper",
         style={"position": "relative"},
         draggable=True,

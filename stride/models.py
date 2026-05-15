@@ -77,6 +77,7 @@ class Task(BaseModel):
     size: Literal["XS", "S", "M", "L", "XL"] = "M"
     estimate_min: int | None = None
     time_of_day: str | None = None  # 'HH:MM'
+    category_id: str = "personal"
     day_key: str  # 'YYYY-MM-DD'
     done: bool = False
     created_at: int
