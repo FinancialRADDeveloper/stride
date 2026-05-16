@@ -5,6 +5,7 @@ from __future__ import annotations
 import dash
 import dash_mantine_components as dmc
 from dash import html, dcc
+from flask import jsonify
 
 from stride.db import app_db
 from stride.services.seed import seed_if_empty
@@ -25,6 +26,11 @@ def create_app() -> dash.Dash:
     # Seed on first boot
     conn = app_db()
     seed_if_empty(conn)
+
+    # Health-check endpoint — used by App Runner and docker-compose healthchecks
+    @app.server.route("/health")
+    def health():
+        return jsonify({"status": "ok"}), 200
 
     app.layout = _layout
 
