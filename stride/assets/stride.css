@@ -1363,9 +1363,69 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   }
 }
 
+/* ============================================================
+   Right-click context menu
+   ============================================================ */
+
+#stride-ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.13), 0 2px 6px rgba(0,0,0,0.07);
+  min-width: 168px;
+  padding: 4px 0;
+  font-family: inherit;
+  user-select: none;
+}
+
+.stride-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  border-radius: 0;
+}
+
+.stride-ctx-item:hover {
+  background: var(--line-soft);
+}
+
+.stride-ctx-icon {
+  font-size: 12px;
+  color: var(--muted);
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 /* Touch devices: always show the move button (no hover state) */
 @media (hover: none) {
   .card-move-btn {
     opacity: 1 !important;
   }
 }
+
+/* Programmatic flyout reveal (triggered by context menu "Move to…") */
+.stride-flyout-open .card-move-btn { opacity: 1; }
+.stride-flyout-open .move-menu-dropdown { display: block; }
+
+.stride-ctx-separator {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+
+.stride-ctx-item--danger { color: var(--coral); }
+.stride-ctx-item--danger .stride-ctx-icon { color: var(--coral); }
+.stride-ctx-item--danger:hover { background: #fff0f0; }
