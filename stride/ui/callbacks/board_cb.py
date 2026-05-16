@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime
 
-from dash import Input, Output, State, callback, no_update
+from dash import ALL, Input, Output, State, callback, ctx, no_update
 from dash.exceptions import PreventUpdate
 
 from stride.db import app_db
@@ -117,3 +117,27 @@ def register_callbacks(app):
         rendered = render_board(tasks=filtered, week_offset=week_offset or 0)
         # rendered.children is the board-inner div; return its children (the columns)
         return rendered.children.children
+
+    @app.callback(
+        Output("store-tasks", "data", allow_duplicate=True),
+        Input({"type": "btn-reschedule-day", "day_key": ALL}, "n_clicks"),
+        State("store-week-offset", "data"),
+        prevent_initial_call=True,
+    )
+    def reschedule_day(n_clicks_list, week_offset):
+        if not any(n_clicks_list):
+            raise PreventUpdate
+        triggered = ctx.triggered_id
+        if not triggered:
+            raise PreventUpdate
+        day_key = triggered["day_key"]
+        today_key = datetime.date.today().isoformat()
+        if day_key == today_key:
+            raise PreventUpdate
+        conn = app_db()
+        open_tasks = list_tasks(conn, day_keys=[day_key], include_done=False, full=False)
+        for task in open_tasks:
+            svc_move(conn, task.id, today_key)
+        days = _week_days(week_offset or 0)
+        refreshed = list_tasks(conn, day_keys=[d.isoformat() for d in days], include_done=True, full=True)
+        return [t.model_dump() for t in refreshed]
