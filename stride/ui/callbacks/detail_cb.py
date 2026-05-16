@@ -58,13 +58,14 @@ def register_callbacks(app):
         Output("detail-drawer", "opened", allow_duplicate=True),
         Input("store-selected", "data"),
         Input("btn-close-drawer", "n_clicks"),
+        Input("btn-save-drawer", "n_clicks"),
         Input("store-tasks", "data"),
         prevent_initial_call=True,
     )
-    def populate_detail(selected_id, close_clicks, tasks):
+    def populate_detail(selected_id, close_clicks, save_clicks, tasks):
         triggered = ctx.triggered_id
 
-        if triggered == "btn-close-drawer":
+        if triggered in ("btn-close-drawer", "btn-save-drawer"):
             return (
                 no_update, no_update, no_update, no_update, no_update,
                 no_update, no_update, no_update, no_update, no_update, no_update, False
@@ -288,3 +289,36 @@ def register_callbacks(app):
         conn = app_db()
         svc_delete(conn, task_id)
         return _refresh_tasks(week_offset), None, False
+
+    # ------------------------------------------------------------------
+    # Save & close — flush all text fields then dismiss the drawer
+    # Priority / size / category / time already auto-save on change.
+    # This covers title, description, estimate, and assignee (blur-based).
+    # ------------------------------------------------------------------
+    @app.callback(
+        Output("store-tasks", "data", allow_duplicate=True),
+        Input("btn-save-drawer", "n_clicks"),
+        State("detail-title", "value"),
+        State("detail-description", "value"),
+        State("detail-estimate", "value"),
+        State("detail-assignee", "value"),
+        State("store-selected", "data"),
+        State("store-week-offset", "data"),
+        prevent_initial_call=True,
+    )
+    def save_and_close(n_clicks, title, description, estimate, assignee, task_id, week_offset):
+        if not n_clicks or not task_id:
+            raise PreventUpdate
+        conn = app_db()
+        updates: dict = {}
+        if title is not None:
+            updates["title"] = title.strip() or title
+        if description is not None:
+            updates["description"] = description
+        if estimate is not None:
+            updates["estimate_min"] = int(estimate)
+        if assignee is not None:
+            updates["assignee"] = assignee.strip() or None
+        if updates:
+            update_task(conn, task_id, **updates)
+        return _refresh_tasks(week_offset)

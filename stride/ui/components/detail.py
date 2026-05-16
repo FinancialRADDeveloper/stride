@@ -173,13 +173,25 @@ def detail_drawer() -> dmc.Drawer:
                 id="detail-header",
                 className="detail-header",
                 children=[
-                    html.Div(id="detail-header-meta", className="detail-header-meta"),
                     html.Button(
-                        "✕",
-                        id="btn-close-drawer",
-                        className="btn-icon",
+                        "Save",
+                        id="btn-save-drawer",
+                        className="btn-save-drawer",
                         n_clicks=0,
-                        title="Close (Esc)",
+                        title="Save and close",
+                    ),
+                    html.Div(
+                        className="detail-header-right",
+                        children=[
+                            html.Div(id="detail-header-meta", className="detail-header-meta"),
+                            html.Button(
+                                "✕",
+                                id="btn-close-drawer",
+                                className="btn-icon",
+                                n_clicks=0,
+                                title="Close (Esc)",
+                            ),
+                        ],
                     ),
                 ],
             ),
