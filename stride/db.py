@@ -10,6 +10,7 @@ Only three public symbols are needed by the rest of the app:
 from __future__ import annotations
 
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -86,28 +87,23 @@ def run_migrations(conn: sqlite3.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Application singleton
+# Application singleton — one connection per thread
 # ---------------------------------------------------------------------------
 
-_connection: Optional[sqlite3.Connection] = None
+_local = threading.local()
 
 
 def app_db() -> sqlite3.Connection:
-    """Return the application-level SQLite connection.
+    """Return a per-thread SQLite connection.
 
-    Opens the connection and applies migrations on the first call;
-    returns the cached connection on every subsequent call.
-
-    Not thread-safe across processes — that's fine for a single-user
-    local app. The background scheduler accesses via the same singleton
-    (WAL mode handles the concurrent writes).
+    Flask runs callbacks on a thread pool; sharing one connection across
+    threads causes sqlite3.InterfaceError when cursors interleave.
+    threading.local() gives each thread its own connection. Migrations are
+    idempotent so running them per-thread is safe.
     """
-    global _connection
-    if _connection is None:
-        # Ensure the data directory exists so sqlite3.connect() can create the file
+    if getattr(_local, "connection", None) is None:
         db_path = Path(DB_PATH)
         db_path.parent.mkdir(parents=True, exist_ok=True)
-
-        _connection = get_connection(db_path)
-        run_migrations(_connection)
-    return _connection
+        _local.connection = get_connection(db_path)
+        run_migrations(_local.connection)
+    return _local.connection
