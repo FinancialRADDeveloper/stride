@@ -187,16 +187,20 @@ def _day_column(
     )
 
 
-def board(tasks: list[dict] | None = None, week_offset: int = 0) -> html.Div:
-    """Render the horizontally-scrolling board of 6 day columns.
+def board(tasks: list[dict] | None = None, week_offset: int = 0, view_mode: str = "week") -> html.Div:
+    """Render the horizontally-scrolling board of day columns.
 
     tasks: flat list of task dicts (all days); will be filtered per column.
-    week_offset: drives which 6 days are shown.
+    week_offset: drives which days are shown.
+    view_mode: "week" shows 6 days, "day" shows only today.
     """
     if tasks is None:
         tasks = []
 
-    days = _week_days(week_offset)
+    if view_mode == "day":
+        days = [datetime.date.today()]
+    else:
+        days = _week_days(week_offset)
 
     # Group tasks by day_key
     tasks_by_day: dict[str, list[dict]] = {d.isoformat(): [] for d in days}
