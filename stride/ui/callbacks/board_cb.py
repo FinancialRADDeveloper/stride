@@ -94,11 +94,13 @@ def register_callbacks(app):
     # Sync view-mode store from the segmented control
     @app.callback(
         Output("store-view-mode", "data"),
+        Output("store-week-offset", "data", allow_duplicate=True),
         Input("view-mode-control", "value"),
         prevent_initial_call=True,
     )
     def update_view_mode(value):
-        return value or "week"
+        # Reset offset to 0 (today) when switching views so we never land on a blank past period
+        return value or "week", 0
 
     # Week/day/month offset navigation
     @app.callback(
