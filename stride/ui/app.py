@@ -12,6 +12,7 @@ from stride.services.seed import seed_if_empty
 from stride.ui.theme import STRIDE_THEME
 from stride.ui.components.topbar import topbar
 from stride.ui.components.detail import detail_drawer
+from stride.ui.components.reschedule_picker import reschedule_picker
 
 
 def create_app() -> dash.Dash:
@@ -42,13 +43,14 @@ def create_app() -> dash.Dash:
     app.layout = _layout
 
     # Register all callbacks
-    from stride.ui.callbacks import board_cb, card_cb, composer_cb, detail_cb, kb_cb, theme_cb
+    from stride.ui.callbacks import board_cb, card_cb, composer_cb, detail_cb, kb_cb, theme_cb, reschedule_cb
     board_cb.register_callbacks(app)
     card_cb.register_callbacks(app)
     composer_cb.register_callbacks(app)
     detail_cb.register_callbacks(app)
     kb_cb.register_callbacks(app)
     theme_cb.register_callbacks(app)
+    reschedule_cb.register_callbacks(app)
 
     return app
 
@@ -72,10 +74,12 @@ def _layout():
                             id="board",
                         ),
                         detail_drawer(),
+                        reschedule_picker(),
                     ],
                 ),
                 # Stores
                 dcc.Store(id="store-tasks", data=[]),
+                dcc.Store(id="store-reschedule-source", data=None),
                 dcc.Store(id="store-selected", data=None),
                 dcc.Store(id="store-week-offset", data=0),
                 dcc.Store(id="store-show-done", data=True),
