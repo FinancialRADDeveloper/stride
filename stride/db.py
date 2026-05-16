@@ -24,14 +24,16 @@ def get_connection(db_path: str | Path = DB_PATH) -> sqlite3.Connection:
     """Open a SQLite connection with sensible defaults.
 
     - row_factory = sqlite3.Row so columns are accessible by name
-    - WAL journal mode for concurrent reader/writer
     - Foreign key enforcement ON
+
+    WAL mode is intentionally omitted: it requires Unix file-locking
+    primitives that fail on Windows bind-mounts inside Docker. DELETE
+    mode (SQLite default) works on all host filesystems. This is a
+    temporary concern — once we migrate to Postgres, this module
+    disappears entirely.
     """
     conn = sqlite3.connect(db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-
-    # WAL mode lets the background sync loop write while Dash reads
-    conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA foreign_keys = ON")
 
     return conn
