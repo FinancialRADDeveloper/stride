@@ -317,6 +317,21 @@ def detail_drawer() -> dmc.Drawer:
                                     ),
                                 ],
                             ),
+                            # Assigned to
+                            html.Div(
+                                className="detail-field-row",
+                                children=[
+                                    html.Div("Assigned to", className="detail-field-label mono"),
+                                    dmc.TextInput(
+                                        id="detail-assignee",
+                                        placeholder="Name or email…",
+                                        styles={
+                                            "input": {"fontSize": "13px"},
+                                            "root": {"flex": "1"},
+                                        },
+                                    ),
+                                ],
+                            ),
                         ],
                     ),
                     # Counters block
@@ -358,6 +373,7 @@ def build_detail_content(task: dict) -> tuple:
     estimate_min = task.get("estimate_min")
     time_of_day = task.get("time_of_day")
     category_id = task.get("category_id", "personal")
+    assignee = task.get("assignee") or ""
     done = task.get("done", False)
     age_days = task.get("age_days", 0)
     move_count = task.get("move_count", 0)
@@ -435,6 +451,7 @@ def build_detail_content(task: dict) -> tuple:
         category_id,
         estimate_min,
         time_of_day or "",
+        assignee,
         counters_el,
         history_el,
     )

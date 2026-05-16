@@ -561,6 +561,12 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   color: var(--ink-2);
 }
 
+.chip--delegated {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+}
+
 .chip--estimate {
   background: transparent;
   border: 1px solid var(--line);

@@ -19,16 +19,21 @@ DAY_CAPACITY_MIN = 480  # 8h soft cap
 
 
 def _week_days(week_offset: int) -> list[datetime.date]:
-    """Return 6 dates starting from Monday of the window.
+    """Return dates for the board window.
 
-    week_offset=0 means the 6-day window that contains today.
-    Week offset is applied in 6-day increments.
+    offset=0: Monday of this week through today+5, so at least 5 future
+    days are always visible regardless of the current weekday.
+    Other offsets: fixed 6-day chunks anchored to Monday.
     """
     today = datetime.date.today()
-    # Anchor to Monday of this week, then add 6*offset days
     monday = today - datetime.timedelta(days=today.weekday())
     start = monday + datetime.timedelta(days=6 * week_offset)
-    return [start + datetime.timedelta(days=i) for i in range(6)]
+    if week_offset == 0:
+        end = today + datetime.timedelta(days=5)
+        n = max(6, (end - monday).days + 1)
+    else:
+        n = 6
+    return [start + datetime.timedelta(days=i) for i in range(n)]
 
 
 def _fmt_minutes(minutes: int) -> str:
