@@ -82,6 +82,7 @@ def _layout():
                 dcc.Store(id="store-reschedule-source", data=None),
                 dcc.Store(id="store-selected", data=None),
                 dcc.Store(id="store-week-offset", data=0),
+                dcc.Store(id="store-view-mode", data="week"),
                 dcc.Store(id="store-show-done", data=True),
                 dcc.Store(id="store-dnd-drop", data=None),
                 dcc.Store(id="store-kb-action", data=None),

@@ -1159,6 +1159,131 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 }
 
 /* ============================================================
+   Month view
+   ============================================================ */
+
+/* Override board-inner flex layout for month grid */
+.board--month {
+  overflow-y: auto;
+}
+
+.board--month .board-inner {
+  display: block;
+  flex: none;
+  width: 100%;
+  padding: 0 16px 24px;
+  overflow: visible;
+}
+
+.month-grid {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.month-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+
+.month-row:last-child {
+  border-bottom: none;
+}
+
+.month-header-row {
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.month-header-cell {
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-right: 1px solid var(--line);
+}
+
+.month-header-cell:last-child {
+  border-right: none;
+}
+
+.month-cell {
+  min-height: 90px;
+  padding: 6px 6px 4px;
+  border-right: 1px solid var(--line);
+  vertical-align: top;
+  background: var(--surface);
+}
+
+.month-cell:last-child {
+  border-right: none;
+}
+
+.month-cell--outside {
+  background: var(--bg);
+  opacity: 0.5;
+}
+
+.month-cell--past .month-day-num:not(.month-day-num--today) {
+  color: var(--muted);
+}
+
+.month-day-num {
+  font-size: 12px;
+  font-weight: 600;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.month-day-num--today {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.month-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.month-task-pill {
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  background: var(--line-soft);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.month-task-more {
+  font-size: 10px;
+  color: var(--muted);
+  padding: 1px 4px;
+}
+
+.month-done-count {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding: 0 2px;
+}
+
+/* ============================================================
    Dark mode — CSS variable overrides
    MantineProvider sets [data-mantine-color-scheme="dark"] on
    the HTML root when forceColorScheme="dark".
