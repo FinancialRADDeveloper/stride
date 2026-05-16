@@ -21,6 +21,13 @@ def create_app() -> dash.Dash:
         assets_folder="../assets",
         suppress_callback_exceptions=True,
         external_stylesheets=[],
+        meta_tags=[
+            {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
+            {"name": "theme-color", "content": "#f5f3ee"},
+            {"name": "mobile-web-app-capable", "content": "yes"},
+            {"name": "apple-mobile-web-app-capable", "content": "yes"},
+            {"name": "apple-mobile-web-app-status-bar-style", "content": "default"},
+        ],
     )
 
     # Seed on first boot

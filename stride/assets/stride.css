@@ -40,7 +40,7 @@ body {
   color: var(--ink);
   font-size: 14px;
   line-height: 1.5;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -66,7 +66,7 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 
 /* ---- Stride root ---- */
 #stride-root {
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1131,4 +1131,93 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 [data-mantine-color-scheme="dark"] .move-menu-dropdown {
   background: var(--surface);
   border-color: var(--line);
+}
+
+/* ================================================================
+   MOBILE  ≤ 767px
+   - Swipeable snap carousel (zero JS)
+   - Collapsed topbar
+   - Full-screen drawer / modal
+   - Larger touch targets
+   ================================================================ */
+
+@media (max-width: 767px) {
+
+  /* Board becomes a horizontal snap carousel */
+  .board {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+  }
+
+  .board-inner {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    min-width: max-content;
+  }
+
+  .day-column {
+    scroll-snap-align: start;
+    width: calc(100vw - 48px);
+    min-width: calc(100vw - 48px);
+    max-width: calc(100vw - 48px);
+    flex-shrink: 0;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  /* Topbar: keep only the essentials */
+  .topbar-subtitle,
+  .topbar-divider,
+  .topbar-week-label,
+  .topbar-show-done,
+  .topbar-date-range {
+    display: none !important;
+  }
+
+  .topbar {
+    padding: 0 12px;
+  }
+
+  /* Detail drawer goes full-screen on mobile */
+  .mantine-Drawer-content {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Modals become bottom-sheet style */
+  .mantine-Modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  /* Larger checkbox touch targets */
+  .mantine-Checkbox-input {
+    padding: 14px;
+    margin: -14px;
+  }
+
+  /* Composer full-width */
+  .composer {
+    margin: 8px;
+  }
+}
+
+/* Touch devices: always show the move button (no hover state) */
+@media (hover: none) {
+  .card-move-btn {
+    opacity: 1 !important;
+  }
 }
