@@ -87,5 +87,6 @@ class Task(BaseModel):
     edit_count: int = 0
     age_days: int = 0
     is_stale: bool = False
+    assignee: str | None = None
     calendar: CalendarLink | None = None
     history: list[TaskEvent] = []  # only loaded when full=True

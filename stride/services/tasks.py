@@ -35,7 +35,7 @@ from stride.models import (
 # ---------------------------------------------------------------------------
 
 _EDITABLE_FIELDS = frozenset(
-    {"title", "description", "priority", "size", "estimate_min", "time_of_day"}
+    {"title", "description", "priority", "size", "estimate_min", "time_of_day", "assignee"}
 )
 
 
@@ -83,6 +83,7 @@ def _row_to_task(
         edit_count=edit_count,
         age_days=ad,
         is_stale=(move_count >= STALE_MOVE_THRESHOLD and not done),
+        assignee=row["assignee"] or None,
         calendar=calendar,
         history=history or [],
     )
@@ -175,6 +176,7 @@ def create_task(
     category_id: str = "personal",
     estimate_min: int | None = None,
     time_of_day: str | None = None,
+    assignee: str | None = None,
 ) -> Task:
     """Insert a new task and append a 'created' event.
 
@@ -188,8 +190,8 @@ def create_task(
             """
             INSERT INTO tasks
               (id, title, description, priority, size, category_id,
-               estimate_min, time_of_day, day_key, done, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+               estimate_min, time_of_day, day_key, done, created_at, updated_at, assignee)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
             """,
             (
                 task_id,
@@ -203,6 +205,7 @@ def create_task(
                 day_key,
                 now,
                 now,
+                assignee or None,
             ),
         )
 
@@ -220,6 +223,7 @@ def create_task(
             "done": False,
             "created_at": now,
             "updated_at": now,
+            "assignee": assignee or None,
         }
         _append_event(conn, task_id, "created", {"snapshot": snapshot})
 

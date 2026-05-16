@@ -8,17 +8,22 @@ from dash import html
 
 from stride.ui.theme import PRIORITY_COLOURS, CATEGORY_COLOURS
 
-_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 _MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
 def _week_days_for_card(week_offset: int = 0) -> list[datetime.date]:
-    """Return the 6 visible day dates for the given week offset."""
+    """Return visible day dates for the given week offset (mirrors board._week_days)."""
     today = datetime.date.today()
     monday = today - datetime.timedelta(days=today.weekday())
     start = monday + datetime.timedelta(days=6 * week_offset)
-    return [start + datetime.timedelta(days=i) for i in range(6)]
+    if week_offset == 0:
+        end = today + datetime.timedelta(days=5)
+        n = max(6, (end - monday).days + 1)
+    else:
+        n = 6
+    return [start + datetime.timedelta(days=i) for i in range(n)]
 
 
 def _day_label(day: datetime.date) -> str:
@@ -87,6 +92,7 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
     title = task.get("title", "")
     description = task.get("description", "")
     category_id = task.get("category_id", "personal")
+    assignee = task.get("assignee") or ""
     current_day_key = task.get("day_key", "")
 
     pri_colour = PRIORITY_COLOURS.get(priority, "#9ca3af")
@@ -180,6 +186,17 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
             title=f"Size: {size} ({_SIZE_HINT.get(size, '')})",
         )
     )
+
+    # Delegation chip — shown when assigned to someone
+    if assignee:
+        short = assignee.split()[0] if assignee else ""
+        meta_chips.append(
+            html.Span(
+                f"→ {short}",
+                className="chip chip--delegated mono",
+                title=f"Delegated to {assignee}",
+            )
+        )
 
     # Estimate chip
     if estimate_min is not None:

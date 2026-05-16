@@ -52,6 +52,7 @@ def register_callbacks(app):
         Output("detail-category", "value"),
         Output("detail-estimate", "value"),
         Output("detail-time", "value"),
+        Output("detail-assignee", "value"),
         Output("detail-counters", "children"),
         Output("detail-history", "children"),
         Output("detail-drawer", "opened", allow_duplicate=True),
@@ -66,7 +67,7 @@ def register_callbacks(app):
         if triggered == "btn-close-drawer":
             return (
                 no_update, no_update, no_update, no_update, no_update,
-                no_update, no_update, no_update, no_update, no_update, False
+                no_update, no_update, no_update, no_update, no_update, no_update, False
             )
 
         if not selected_id or not tasks:
@@ -86,6 +87,7 @@ def register_callbacks(app):
             category_val,
             estimate_val,
             time_val,
+            assignee_val,
             counters_el,
             history_el,
         ) = build_detail_content(task)
@@ -103,6 +105,7 @@ def register_callbacks(app):
             category_val,
             estimate_val if estimate_val is not None else None,
             time_val,
+            assignee_val,
             counters_el,
             history_el,
             opened,
@@ -247,6 +250,24 @@ def register_callbacks(app):
             parts = value.split(":")
             time_val = ":".join(parts[:2]) if len(parts) >= 2 else value
         update_task(conn, task_id, time_of_day=time_val)
+        return _refresh_tasks(week_offset)
+
+    # ------------------------------------------------------------------
+    # Save assignee on blur
+    # ------------------------------------------------------------------
+    @app.callback(
+        Output("store-tasks", "data", allow_duplicate=True),
+        Input("detail-assignee", "n_blur"),
+        State("detail-assignee", "value"),
+        State("store-selected", "data"),
+        State("store-week-offset", "data"),
+        prevent_initial_call=True,
+    )
+    def save_assignee(n_blur, value, task_id, week_offset):
+        if not task_id:
+            raise PreventUpdate
+        conn = app_db()
+        update_task(conn, task_id, assignee=value.strip() if value and value.strip() else None)
         return _refresh_tasks(week_offset)
 
     # ------------------------------------------------------------------

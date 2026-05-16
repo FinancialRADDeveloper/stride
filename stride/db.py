@@ -45,15 +45,41 @@ def get_connection(db_path: str | Path = DB_PATH) -> sqlite3.Connection:
 def run_migrations(conn: sqlite3.Connection) -> None:
     """Apply all *.sql migration files from MIGRATIONS_DIR in sorted order.
 
-    Each file is executed as a single script via executescript(), which
-    commits any open transaction before running and commits again at the
-    end. Migration files are designed to be idempotent (CREATE IF NOT
-    EXISTS, INSERT OR IGNORE) so re-running is safe.
+    Tracks applied migrations in _applied_migrations so each file runs
+    exactly once, even across restarts. Files must be named so that sorting
+    them produces the correct application order (e.g. 0001_..., 0002_...).
     """
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS _applied_migrations (
+            name       TEXT PRIMARY KEY,
+            applied_at INTEGER NOT NULL
+        );
+        """
+    )
+    import time as _time
+
     migration_files = sorted(Path(MIGRATIONS_DIR).glob("*.sql"))
     for path in migration_files:
+        name = path.name
+        already = conn.execute(
+            "SELECT 1 FROM _applied_migrations WHERE name = ?", (name,)
+        ).fetchone()
+        if already:
+            continue
         sql = path.read_text(encoding="utf-8")
-        conn.executescript(sql)
+        try:
+            conn.executescript(sql)
+        except sqlite3.OperationalError as exc:
+            # "duplicate column name" means a prior run applied this migration
+            # before the tracking table existed — treat it as already applied.
+            if "duplicate column name" not in str(exc):
+                raise
+        conn.execute(
+            "INSERT INTO _applied_migrations (name, applied_at) VALUES (?, ?)",
+            (name, int(_time.time() * 1000)),
+        )
+        conn.commit()
     conn.commit()
 
 
