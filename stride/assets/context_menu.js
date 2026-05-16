@@ -30,6 +30,10 @@
       '<button class="stride-ctx-item" id="stride-ctx-done" data-action="done">',
         '<span class="stride-ctx-icon">✓</span> Mark as done',
       "</button>",
+      '<div class="stride-ctx-separator"></div>',
+      '<button class="stride-ctx-item stride-ctx-item--danger" data-action="delete">',
+        '<span class="stride-ctx-icon">✕</span> Delete task',
+      "</button>",
     ].join("");
 
     menu.style.display = "none";
@@ -75,6 +79,12 @@
     } else if (action === "done") {
       var checkbox = wrapper.querySelector("button.card-checkbox, button.card-checkbox--done");
       if (checkbox) checkbox.click();
+
+    } else if (action === "delete") {
+      var taskId = wrapper.dataset.taskId;
+      if (taskId && window.dash_clientside && window.dash_clientside.set_props) {
+        window.dash_clientside.set_props("store-ctx-delete", { data: taskId });
+      }
     }
   }
 

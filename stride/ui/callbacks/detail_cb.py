@@ -322,3 +322,22 @@ def register_callbacks(app):
         if updates:
             update_task(conn, task_id, **updates)
         return _refresh_tasks(week_offset)
+
+    # ------------------------------------------------------------------
+    # Context-menu delete — triggered by right-click "Delete task"
+    # Uses store-ctx-delete written by context_menu.js via set_props.
+    # ------------------------------------------------------------------
+    @app.callback(
+        Output("store-tasks", "data", allow_duplicate=True),
+        Output("store-selected", "data", allow_duplicate=True),
+        Output("detail-drawer", "opened", allow_duplicate=True),
+        Input("store-ctx-delete", "data"),
+        State("store-week-offset", "data"),
+        prevent_initial_call=True,
+    )
+    def on_ctx_delete(task_id, week_offset):
+        if not task_id:
+            raise PreventUpdate
+        conn = app_db()
+        svc_delete(conn, task_id)
+        return _refresh_tasks(week_offset), None, False
