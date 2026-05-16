@@ -976,7 +976,7 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   position: relative;
 }
 
-/* Move flyout container — absolutely positioned top-right of the card */
+/* Move button — absolutely positioned top-right of the card, visible on hover */
 .card-move-wrapper {
   position: absolute;
   top: 6px;
@@ -984,7 +984,6 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   z-index: 10;
 }
 
-/* Card move button — hidden by default, visible on card-wrapper hover */
 .card-move-btn {
   width: 22px;
   height: 22px;
@@ -1008,57 +1007,6 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 }
 
 .card-move-btn:hover {
-  background: var(--line-soft);
-  color: var(--ink);
-}
-
-/* Move dropdown — hidden by default, shown when card-move-wrapper is hovered */
-.move-menu-dropdown {
-  display: none;
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 2px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
-  min-width: 140px;
-  z-index: 100;
-  padding: 4px 0;
-}
-
-.card-move-wrapper:hover .card-move-btn {
-  opacity: 1;
-}
-
-.card-move-wrapper:hover .move-menu-dropdown {
-  display: block;
-}
-
-.move-menu-label {
-  font-size: 10px;
-  color: var(--muted);
-  padding: 4px 10px 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.move-day-btn {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 5px 10px;
-  font-size: 12px;
-  color: var(--ink-2);
-  cursor: pointer;
-  font-family: inherit;
-  border-radius: 0;
-}
-
-.move-day-btn:hover {
   background: var(--line-soft);
   color: var(--ink);
 }
@@ -1206,11 +1154,6 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 [data-mantine-color-scheme="dark"] .composer-input {
   color: var(--ink);
   border-bottom-color: var(--line);
-}
-
-[data-mantine-color-scheme="dark"] .move-menu-dropdown {
-  background: var(--surface);
-  border-color: var(--line);
 }
 
 /* ================================================================

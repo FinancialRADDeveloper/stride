@@ -2,42 +2,9 @@
 
 from __future__ import annotations
 
-import datetime
-
 from dash import html
 
 from stride.ui.theme import PRIORITY_COLOURS, CATEGORY_COLOURS
-
-_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-_MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
-
-def _week_days_for_card(week_offset: int = 0) -> list[datetime.date]:
-    """Return visible day dates for the given week offset (mirrors board._week_days)."""
-    today = datetime.date.today()
-    monday = today - datetime.timedelta(days=today.weekday())
-    start = monday + datetime.timedelta(days=6 * week_offset)
-    if week_offset == 0:
-        end = today + datetime.timedelta(days=5)
-        n = max(6, (end - monday).days + 1)
-    else:
-        n = 6
-    return [start + datetime.timedelta(days=i) for i in range(n)]
-
-
-def _day_label(day: datetime.date) -> str:
-    today = datetime.date.today()
-    diff = (day - today).days
-    if diff == 0:
-        return "Today"
-    if diff == 1:
-        return "Tomorrow"
-    if diff == -1:
-        return "Yesterday"
-    day_name = _DAY_NAMES[day.weekday()]
-    date_str = f"{day.day} {_MONTH_SHORT[day.month - 1]}"
-    return f"{day_name} {date_str}"
 
 
 # Background tints for priority badges
@@ -75,11 +42,7 @@ def _fmt_minutes(minutes: int | None) -> str:
 
 
 def task_card(task: dict, week_offset: int = 0) -> html.Div:
-    """Render a single task card.
-
-    ID is pattern-matched: {'type': 'card', 'task_id': task['id']}
-    week_offset is used to generate move-to menu items for other days.
-    """
+    """Render a single task card."""
     task_id = task["id"]
     priority = task.get("priority", "P3")
     size = task.get("size", "M")
@@ -93,7 +56,6 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
     description = task.get("description", "")
     category_id = task.get("category_id", "personal")
     assignee = task.get("assignee") or ""
-    current_day_key = task.get("day_key", "")
 
     pri_colour = PRIORITY_COLOURS.get(priority, "#9ca3af")
     pri_bg = _PRIORITY_BG.get(priority, "#f9fafb")
@@ -130,8 +92,6 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
     if done:
         title_classes += " card-title--done"
 
-    # Checkbox is built separately and placed OUTSIDE task-card in the wrapper
-    # so its click doesn't bubble to the card div and open the detail drawer.
     checkbox_classes = "card-checkbox"
     if done:
         checkbox_classes += " card-checkbox--done"
@@ -187,7 +147,7 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
         )
     )
 
-    # Delegation chip — shown when assigned to someone
+    # Delegation chip
     if assignee:
         short = assignee.split()[0] if assignee else ""
         meta_chips.append(
@@ -208,7 +168,6 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
             )
         )
 
-    # Spacer
     meta_chips.append(html.Div(className="chip-spacer"))
 
     # Edit/move/age glyphs on the right
@@ -255,42 +214,20 @@ def task_card(task: dict, week_offset: int = 0) -> html.Div:
         n_clicks=0,
     )
 
-    # Move-to flyout — only show today and future days (never past dates).
-    today = datetime.date.today()
-    visible_days = _week_days_for_card(week_offset)
-    day_buttons = []
-    for day in visible_days:
-        day_key = day.isoformat()
-        if day_key == current_day_key:
-            continue  # skip current day
-        if day < today:
-            continue  # skip past days
-        label = _day_label(day)
-        day_buttons.append(
-            html.Button(
-                label,
-                id={"type": "btn-move-to", "task_id": task_id, "day_key": day_key},
-                className="move-day-btn",
-                n_clicks=0,
-            )
-        )
-
-    move_flyout = html.Div(
-        [
-            html.Button("→", className="card-move-btn", title="Move to…"),
-            html.Div(
-                [html.Div("Move to", className="move-menu-label mono")] + day_buttons,
-                className="move-menu-dropdown",
-            ),
-        ],
+    # Move button — opens the shared reschedule modal for this single task
+    move_btn = html.Div(
+        html.Button(
+            "→",
+            id={"type": "btn-move-task", "task_id": task_id},
+            className="card-move-btn",
+            n_clicks=0,
+            title="Move to…",
+        ),
         className="card-move-wrapper",
     )
 
-    # Checkbox lives here (sibling of card_div) so its click doesn't bubble
-    # up through the card div and trigger the drawer-open callback.
-    # draggable=True enables HTML5 native drag; data-task-id is read by dnd.js.
     return html.Div(
-        [card_div, checkbox, move_flyout],
+        [card_div, checkbox, move_btn],
         className="card-wrapper",
         style={"position": "relative"},
         draggable=True,
