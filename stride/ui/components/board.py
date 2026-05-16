@@ -118,6 +118,13 @@ def _day_column(
                         f"{len(open_tasks)} open · {_fmt_minutes(total_min)}",
                         className="col-stats mono",
                     ),
+                    html.Button(
+                        "Reschedule →",
+                        id={"type": "btn-reschedule-day", "day_key": day_key},
+                        className="btn-reschedule",
+                        n_clicks=0,
+                        title=f"Reschedule open tasks from {day_label}",
+                    ) if (is_past and open_tasks) else None,
                     html.Span(
                         f"{cap_pct}%",
                         className="col-cap-pct mono" + (" col-cap-pct--over" if over else ""),
