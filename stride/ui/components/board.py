@@ -124,7 +124,7 @@ def _day_column(
                         className="btn-reschedule",
                         n_clicks=0,
                         title=f"Reschedule open tasks from {day_label}",
-                    ) if (is_past and open_tasks) else None,
+                    ) if ((is_past or is_today) and open_tasks) else None,
                     html.Span(
                         f"{cap_pct}%",
                         className="col-cap-pct mono" + (" col-cap-pct--over" if over else ""),
