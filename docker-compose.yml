@@ -4,8 +4,10 @@ services:
     ports:
       - "8050:8050"
     volumes:
-      # SQLite data persists across container restarts
-      - stride-data:/data
+      # Bind-mount the local data/ folder so Docker and `uv run stride` share
+      # the same SQLite file. When we migrate to Postgres this becomes a
+      # connection string env var and this mount disappears entirely.
+      - ./data:/data
     environment:
       DATA_DIR: /data
       STRIDE_DEBUG: "false"
@@ -19,6 +21,3 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
-
-volumes:
-  stride-data:

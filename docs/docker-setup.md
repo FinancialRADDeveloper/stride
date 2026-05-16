@@ -102,20 +102,23 @@ Dash is running on http://0.0.0.0:8050/
 
 ## How data persists
 
-Stride's SQLite database lives inside a **Docker named volume** called
-`stride-data`, mounted at `/data` inside the container.
+Stride's SQLite database lives in `data/stride.db` at the repo root.
+Docker bind-mounts this folder into the container at `/data`, so:
+
+- `uv run stride` (local dev) and `docker compose up` share the **same database**
+- No data is siloed inside a Docker-managed volume
+- The `data/` directory is git-ignored, so the file never gets committed
+
+To wipe the database and start fresh:
 
 ```
-docker volume ls           # lists all volumes, including stride-data
-docker volume inspect stride-data   # shows where Docker stores the files
+rm data/stride.db          # (or delete it in Explorer)
+docker compose up --build  # migrations + seed run again on next start
 ```
 
-The volume survives `docker compose down` and `docker compose up` — your tasks
-are not lost between restarts. To wipe the database and start fresh:
-
-```
-docker compose down -v     # -v removes volumes too
-```
+> **Note:** When we migrate to Postgres, the `./data:/data` mount disappears
+> and is replaced by a `DATABASE_URL` environment variable. The bind-mount
+> is a temporary bridge for the SQLite era only.
 
 ---
 
