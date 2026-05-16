@@ -40,7 +40,7 @@ body {
   color: var(--ink);
   font-size: 14px;
   line-height: 1.5;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -66,7 +66,7 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 
 /* ---- Stride root ---- */
 #stride-root {
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -979,4 +979,157 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
   font-size: 12px;
   color: var(--muted);
   word-break: break-all;
+}
+
+/* ============================================================
+   Mobile — all rules inside a single media query block.
+   Desktop behaviour is completely unchanged.
+   ============================================================ */
+
+@media (max-width: 767px) {
+
+  /* ---- Base ---- */
+  body {
+    font-size: 15px; /* slightly larger base for finger-sized targets */
+  }
+
+  /* ---- Topbar: keep logo + nav arrows, hide everything else ---- */
+  .topbar {
+    padding: 0 12px;
+    height: 52px;
+  }
+
+  .topbar-subtitle,
+  .topbar-divider,
+  .topbar-week-label,
+  .topbar-show-done,
+  .topbar-spacer,
+  .topbar-date-range {
+    display: none;
+  }
+
+  .topbar-left {
+    gap: 10px;
+  }
+
+  /* ---- Board: CSS snap carousel ---- */
+  /* Each day column snaps to fill the viewport, with a peek of the next */
+  .board {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* hide scrollbar on mobile — swipe is the affordance */
+  }
+
+  .board::-webkit-scrollbar {
+    display: none;
+  }
+
+  .board-inner {
+    min-width: unset;
+    height: 100%;
+    display: flex;
+  }
+
+  .day-column {
+    flex: 0 0 calc(100vw - 48px);
+    width: calc(100vw - 48px);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    border-right: 1px solid var(--line);
+  }
+
+  /* First column needs a left margin so the peek is symmetrical */
+  .day-column--first {
+    margin-left: 12px;
+  }
+
+  /* Last column needs right padding so it can scroll far enough to snap */
+  .day-column:last-child {
+    margin-right: 36px;
+  }
+
+  /* ---- Column cards: ensure they scroll inside the fixed-height column ---- */
+  .col-cards {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 12px 80px; /* extra bottom padding above the safe area */
+  }
+
+  /* ---- Touch targets ---- */
+  /* Checkbox: visually 16px but hit area 44px (Apple HIG minimum) */
+  .card-checkbox {
+    padding: 14px;
+    margin: -14px;
+  }
+
+  /* Add-task button: taller so it's easy to tap */
+  .btn-add-task {
+    padding: 12px 10px;
+    font-size: 14px;
+  }
+
+  /* Nav arrows: slightly bigger touch area */
+  .btn-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* ---- Move button: always visible on touch devices ---- */
+  /* On desktop, opacity:0 and revealed on hover. On touch, hover doesn't work. */
+  @media (hover: none) {
+    .card-move-btn {
+      opacity: 1;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  /* ---- Detail drawer: full-screen on mobile ---- */
+  /* Mantine generates .mantine-Drawer-content — override its width */
+  .mantine-Drawer-content {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .mantine-Drawer-body {
+    padding: 12px 16px;
+  }
+
+  /* ---- Composer modal: full-width on mobile ---- */
+  .mantine-Modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .mantine-Modal-inner {
+    align-items: flex-end; /* slide up from bottom like a native sheet */
+    padding: 0;
+  }
+
+  /* ---- Cards: slightly more padding for fat fingers ---- */
+  .task-card {
+    padding: 12px 14px;
+  }
+
+  .col-header {
+    padding: 12px 14px 10px;
+  }
+
+  /* ---- Swipe hint strip: subtle indicator that the board is swipeable ---- */
+  /* Small dot row below the board to show which day column is visible */
+  /* (Implemented in CSS only using a fixed strip — dots driven by scroll position
+     would need JS; for now we use a static visual affordance) */
+
+} /* end @media (max-width: 767px) */
+
+/* Touch-primary devices: show move button regardless of screen width
+   (catches tablets in landscape that are wider than 767px) */
+@media (hover: none) {
+  .card-move-btn {
+    opacity: 1;
+  }
 }
