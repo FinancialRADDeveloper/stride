@@ -55,8 +55,22 @@
       if (card) card.click();
 
     } else if (action === "move") {
-      var moveBtn = wrapper.querySelector(".card-move-btn");
-      if (moveBtn) moveBtn.click();
+      var flyout = wrapper.querySelector(".move-menu-dropdown");
+      if (flyout) {
+        // Old CSS hover flyout — reveal it via a class, close on next click outside
+        var mw = wrapper.querySelector(".card-move-wrapper");
+        if (mw) {
+          mw.classList.add("stride-flyout-open");
+          document.addEventListener("mousedown", function closeFlyout() {
+            mw.classList.remove("stride-flyout-open");
+            document.removeEventListener("mousedown", closeFlyout, true);
+          }, true);
+        }
+      } else {
+        // New modal button (PR #25+)
+        var moveBtn = wrapper.querySelector(".card-move-btn");
+        if (moveBtn) moveBtn.click();
+      }
 
     } else if (action === "done") {
       var checkbox = wrapper.querySelector("button.card-checkbox, button.card-checkbox--done");
@@ -106,6 +120,16 @@
   // ── Event listeners ───────────────────────────────────────────────────────
   document.addEventListener("contextmenu", function (e) {
     var wrapper = e.target.closest(".card-wrapper");
+    if (!wrapper) {
+      // Mantine's drawer overlay captures pointer events — temporarily pierce it
+      // so elementFromPoint can find the card underneath.
+      var el = e.target;
+      var origPE = el.style.pointerEvents;
+      el.style.pointerEvents = "none";
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      el.style.pointerEvents = origPE;
+      if (under) wrapper = under.closest(".card-wrapper");
+    }
     if (!wrapper) {
       hide();
       return; // let the browser show its default menu elsewhere

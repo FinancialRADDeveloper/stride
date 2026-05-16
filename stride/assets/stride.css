@@ -1347,3 +1347,7 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
     opacity: 1 !important;
   }
 }
+
+/* Programmatic flyout reveal (triggered by context menu "Move to…") */
+.stride-flyout-open .card-move-btn { opacity: 1; }
+.stride-flyout-open .move-menu-dropdown { display: block; }
