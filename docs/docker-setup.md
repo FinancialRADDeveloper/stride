@@ -20,7 +20,9 @@ the containerisation.
 
 2. **No other process on port 8050**
    - If you run Stride locally with `uv run stride`, stop it first.
-   - Check: `netstat -ano | findstr :8050` (Windows) or `lsof -i :8050` (Mac)
+   - Check: 
+     - `netstat -ano | findstr :8050` (Windows)
+     - `lsof -i :8050` (Mac)
 
 ---
 

@@ -5,13 +5,17 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# Install dependencies before copying source so this layer is cached
-# unless pyproject.toml or uv.lock changes.
+# Install external dependencies first — this layer is cached unless
+# pyproject.toml or uv.lock changes, even when source files change.
+# --no-install-project skips building the local `stride` package (source
+# not present yet); the second sync below installs it once source is copied.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-install-project
 
-# Copy application source
+# Copy application source, then install the local package on top of the
+# already-cached dependency layer.
 COPY stride/ stride/
+RUN uv sync --frozen --no-dev
 
 # Persistent data volume — SQLite file lives here.
 # Override DATA_DIR to point elsewhere (e.g. an EFS mount) without rebuilding.

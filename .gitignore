@@ -30,3 +30,4 @@ output/pdf/
 Thumbs.db
 *.swp
 .idea/
+/.claude/
