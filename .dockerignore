@@ -1,0 +1,36 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Data — the container uses a Docker volume, not the local SQLite file
+data/
+
+# Git
+.git/
+.gitignore
+
+# Dev tooling
+.claude/
+.ruff_cache/
+.pytest_cache/
+tests/
+
+# Docs and project files — not needed in the image
+docs/
+blog/
+output/
+prototype/
+tmp/
+*.md
+*.html
+*.zip
+
+# Local secrets
+.env
+.env.*

@@ -1,0 +1,24 @@
+services:
+  stride:
+    build: .
+    ports:
+      - "8050:8050"
+    volumes:
+      # SQLite data persists across container restarts
+      - stride-data:/data
+    environment:
+      DATA_DIR: /data
+      STRIDE_DEBUG: "false"
+      # Set a real secret in .env for local dev; never commit it
+      STRIDE_SECRET: "${STRIDE_SECRET:-change-me-for-local-dev}"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8050/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  stride-data:

@@ -4,7 +4,9 @@ from pathlib import Path
 # Root of the repo (one level up from this file's package directory)
 REPO_ROOT = Path(__file__).parent.parent
 
-DATA_DIR = REPO_ROOT / "data"
+# DATA_DIR holds the SQLite file (and the Fernet key).
+# In Docker the volume is mounted at /data; locally it stays at REPO_ROOT/data.
+DATA_DIR = Path(os.environ.get("DATA_DIR", str(REPO_ROOT / "data")))
 DB_PATH = DATA_DIR / "stride.db"
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
