@@ -14,6 +14,9 @@
     });
   }
 
+  // Use capture phase (true) so these listeners fire BEFORE React 18's event
+  // delegation, which attaches to the React root element and can swallow drag
+  // events before they bubble to document-level bubble-phase listeners.
   document.addEventListener('dragstart', function (e) {
     var wrapper = e.target.closest('[data-task-id]');
     if (!wrapper) return;
@@ -24,14 +27,14 @@
     }
     // Defer adding .dragging so the drag ghost captures the un-dimmed card
     setTimeout(function () { wrapper.classList.add('dragging'); }, 0);
-  });
+  }, true);
 
   document.addEventListener('dragend', function (e) {
     var wrapper = e.target.closest('[data-task-id]');
     if (wrapper) wrapper.classList.remove('dragging');
     clearDropHighlights();
     dragging = null;
-  });
+  }, true);
 
   document.addEventListener('dragover', function (e) {
     if (!dragging) return;
@@ -41,7 +44,7 @@
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     clearDropHighlights();
     col.classList.add('day-column--drop-active');
-  });
+  }, true);
 
   document.addEventListener('dragleave', function (e) {
     var col = e.target.closest('[data-drop-day]');
@@ -50,7 +53,7 @@
     if (!col.contains(e.relatedTarget)) {
       col.classList.remove('day-column--drop-active');
     }
-  });
+  }, true);
 
   document.addEventListener('drop', function (e) {
     var col = e.target.closest('[data-drop-day]');
@@ -64,5 +67,5 @@
       });
     }
     dragging = null;
-  });
+  }, true);
 })();
