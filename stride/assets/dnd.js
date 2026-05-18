@@ -14,32 +14,37 @@
     });
   }
 
+  // Use capture phase (true) so these listeners fire BEFORE React 18's event
+  // delegation, which attaches to the React root element and can swallow drag
+  // events before they bubble to document-level bubble-phase listeners.
   document.addEventListener('dragstart', function (e) {
     var wrapper = e.target.closest('[data-task-id]');
     if (!wrapper) return;
     dragging = wrapper.dataset.taskId;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragging);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragging);
+    }
     // Defer adding .dragging so the drag ghost captures the un-dimmed card
     setTimeout(function () { wrapper.classList.add('dragging'); }, 0);
-  });
+  }, true);
 
   document.addEventListener('dragend', function (e) {
     var wrapper = e.target.closest('[data-task-id]');
     if (wrapper) wrapper.classList.remove('dragging');
     clearDropHighlights();
     dragging = null;
-  });
+  }, true);
 
   document.addEventListener('dragover', function (e) {
     if (!dragging) return;
     var col = e.target.closest('[data-drop-day]');
     if (!col) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     clearDropHighlights();
     col.classList.add('day-column--drop-active');
-  });
+  }, true);
 
   document.addEventListener('dragleave', function (e) {
     var col = e.target.closest('[data-drop-day]');
@@ -48,7 +53,7 @@
     if (!col.contains(e.relatedTarget)) {
       col.classList.remove('day-column--drop-active');
     }
-  });
+  }, true);
 
   document.addEventListener('drop', function (e) {
     var col = e.target.closest('[data-drop-day]');
@@ -58,9 +63,9 @@
     var toDay = col.dataset.dropDay;
     if (window.dash_clientside && window.dash_clientside.set_props) {
       window.dash_clientside.set_props('store-dnd-drop', {
-        data: { task_id: dragging, to_day_key: toDay }
+        data: { task_id: dragging, to_day_key: toDay, ts: Date.now() }
       });
     }
     dragging = null;
-  });
+  }, true);
 })();
