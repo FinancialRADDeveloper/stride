@@ -58,7 +58,7 @@
     var toDay = col.dataset.dropDay;
     if (window.dash_clientside && window.dash_clientside.set_props) {
       window.dash_clientside.set_props('store-dnd-drop', {
-        data: { task_id: dragging, to_day_key: toDay }
+        data: { task_id: dragging, to_day_key: toDay, ts: Date.now() }
       });
     }
     dragging = null;

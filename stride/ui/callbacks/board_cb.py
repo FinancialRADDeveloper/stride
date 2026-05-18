@@ -220,4 +220,6 @@ def register_callbacks(app):
         view = view_mode or "week"
         if view == "month":
             return _tasks_for_month(offset)
+        if view == "day":
+            return _tasks_for_day(offset)
         return _tasks_for_window(offset)
