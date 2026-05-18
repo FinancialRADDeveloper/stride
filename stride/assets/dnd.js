@@ -18,8 +18,10 @@
     var wrapper = e.target.closest('[data-task-id]');
     if (!wrapper) return;
     dragging = wrapper.dataset.taskId;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragging);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragging);
+    }
     // Defer adding .dragging so the drag ghost captures the un-dimmed card
     setTimeout(function () { wrapper.classList.add('dragging'); }, 0);
   });
@@ -36,7 +38,7 @@
     var col = e.target.closest('[data-drop-day]');
     if (!col) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
     clearDropHighlights();
     col.classList.add('day-column--drop-active');
   });
