@@ -1428,4 +1428,67 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 
 .stride-ctx-item--danger { color: var(--coral); }
 .stride-ctx-item--danger .stride-ctx-icon { color: var(--coral); }
+
+/* ============================================================
+   Overdue alerting
+   ============================================================ */
+
+/* Past day column with open tasks — amber left-border accent */
+.day-column--overdue {
+  border-left: 3px solid var(--amber) !important;
+}
+
+/* Amber "⚠ N overdue" badge inline with day name in column header */
+.col-overdue-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--amber);
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* Topbar overdue pill — amber button, shown only when count > 0 */
+.topbar-overdue-pill {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.40);
+  background: rgba(245, 158, 11, 0.10);
+  color: #92400e;               /* dark amber, readable on light + dark */
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.topbar-overdue-pill:hover {
+  background: rgba(245, 158, 11, 0.20);
+  border-color: rgba(245, 158, 11, 0.60);
+}
+
+/* Dark mode */
+[data-mantine-color-scheme="dark"] .topbar-overdue-pill {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.30);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+[data-mantine-color-scheme="dark"] .topbar-overdue-pill:hover {
+  background: rgba(251, 191, 36, 0.16);
+}
+
+[data-mantine-color-scheme="dark"] .col-overdue-badge {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.10);
+  border-color: rgba(251, 191, 36, 0.25);
+}
 .stride-ctx-item--danger:hover { background: #fff0f0; }
