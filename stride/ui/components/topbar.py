@@ -54,6 +54,14 @@ def topbar() -> html.Div:
             html.Div(
                 className="topbar-right",
                 children=[
+                    html.Button(
+                        "★ Achievements",
+                        id="btn-achievements",
+                        className="btn-text",
+                        title="View completed tasks and streak",
+                        n_clicks=0,
+                    ),
+                    html.Div(className="topbar-spacer"),
                     html.Div(
                         className="topbar-show-done",
                         children=dmc.Switch(
