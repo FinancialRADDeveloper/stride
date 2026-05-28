@@ -74,11 +74,15 @@ def _day_column(
     else:
         bar_colour = CAPACITY_OK_COLOUR
 
+    open_past_count = len(open_tasks) if is_past else 0
+
     col_classes = "day-column"
     if is_today:
         col_classes += " day-column--today"
     if is_past:
         col_classes += " day-column--past"
+    if is_past and open_tasks:
+        col_classes += " day-column--overdue"   # amber accent when past day has open tasks
     if is_first:
         col_classes += " day-column--first"
 
@@ -106,6 +110,11 @@ def _day_column(
                                 className="col-day-label" + (" col-day-label--past" if is_past else ""),
                             ),
                             html.Span("NOW", className="col-now-badge mono") if is_today else None,
+                            # Amber overdue count badge — only on past days with open tasks
+                            html.Span(
+                                f"⚠ {open_past_count} overdue",
+                                className="col-overdue-badge",
+                            ) if open_past_count else None,
                         ],
                     ),
                     html.Span(date_label, className="col-date mono"),
