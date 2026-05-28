@@ -8,8 +8,13 @@ on:
 
 jobs:
   build:
-    name: Build Docker image
+    name: Build & push Docker image
     runs-on: ubuntu-latest
+
+    # OIDC token needed to assume the stride-github-actions IAM role on main
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout
@@ -18,11 +23,41 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
-        uses: docker/build-push-action@v5
+      # --- Push to ECR only on main branch -----------------------------------
+
+      - name: Configure AWS credentials (main only)
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/stride-github-actions
+          aws-region: eu-west-2
+
+      - name: Login to Amazon ECR (main only)
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push image (main branch)
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
         with:
           context: .
-          push: false          # no registry yet — just prove the build works
+          push: true
+          # Tag with both `latest` and the exact commit SHA — every image is
+          # uniquely traceable; `latest` makes rollback inspection easy.
+          tags: |
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com/stride:latest
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-2.amazonaws.com/stride:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      # --- PR builds: prove the image builds without pushing -----------------
+
+      - name: Build image only (pull request)
+        if: github.ref != 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
           tags: stride:ci-${{ github.sha }}
           cache-from: type=gha
           cache-to:   type=gha,mode=max
