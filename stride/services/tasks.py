@@ -444,3 +444,27 @@ def update_task(
             )
 
     return get_task(conn, task_id, full=False)  # type: ignore[return-value]
+
+
+def get_overdue_summary(conn: sqlite3.Connection) -> dict:
+    """Return count and oldest day_key of incomplete tasks from past days.
+
+    Lightweight query run independently of the board's task window so it
+    captures overdue tasks from any previous week, not just the visible one.
+
+    Returns:
+        {"count": int, "oldest_day_key": str | None}
+    """
+    today = datetime.date.today().isoformat()
+    row = conn.execute(
+        """
+        SELECT COUNT(*) AS count, MIN(day_key) AS oldest_day_key
+        FROM tasks
+        WHERE day_key < ? AND done = 0
+        """,
+        (today,),
+    ).fetchone()
+    return {
+        "count": int(row["count"] or 0),
+        "oldest_day_key": row["oldest_day_key"],  # None if no overdue tasks
+    }
