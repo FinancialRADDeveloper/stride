@@ -43,7 +43,7 @@ def create_app() -> dash.Dash:
     app.layout = _layout
 
     # Register all callbacks
-    from stride.ui.callbacks import board_cb, card_cb, composer_cb, detail_cb, kb_cb, theme_cb, reschedule_cb
+    from stride.ui.callbacks import board_cb, card_cb, composer_cb, detail_cb, kb_cb, theme_cb, reschedule_cb, overdue_cb
     board_cb.register_callbacks(app)
     card_cb.register_callbacks(app)
     composer_cb.register_callbacks(app)
@@ -51,6 +51,7 @@ def create_app() -> dash.Dash:
     kb_cb.register_callbacks(app)
     theme_cb.register_callbacks(app)
     reschedule_cb.register_callbacks(app)
+    overdue_cb.register_callbacks(app)
 
     return app
 
@@ -88,6 +89,8 @@ def _layout():
                 dcc.Store(id="store-ctx-delete", data=None),
                 dcc.Store(id="store-kb-action", data=None),
                 dcc.Store(id="store-theme", data="light"),
+                # Overdue summary: {count, oldest_day_key} — refreshed on tick
+                dcc.Store(id="store-overdue", data={"count": 0, "oldest_day_key": None}),
                 # Tick: triggers task refresh every 60 seconds
                 dcc.Interval(id="tick", interval=60_000, n_intervals=0),
             ],

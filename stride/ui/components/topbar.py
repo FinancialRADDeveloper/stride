@@ -54,6 +54,15 @@ def topbar() -> html.Div:
             html.Div(
                 className="topbar-right",
                 children=[
+                    # Overdue pill — hidden when no overdue tasks; callback drives content + visibility
+                    html.Button(
+                        id="btn-overdue-pill",
+                        className="topbar-overdue-pill",
+                        title="Jump to oldest overdue tasks",
+                        n_clicks=0,
+                        style={"display": "none"},
+                    ),
+                    html.Div(className="topbar-spacer"),
                     html.Div(
                         className="topbar-show-done",
                         children=dmc.Switch(
