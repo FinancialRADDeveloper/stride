@@ -1,0 +1,117 @@
+name: Deploy
+
+# Runs after CI succeeds on main. Deploys to UAT automatically, then waits
+# for manual approval before promoting the same image to Production.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+env:
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_DEFAULT_REGION: eu-west-2
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Guard — skip everything if CI failed
+  # ---------------------------------------------------------------------------
+  check-ci:
+    name: CI passed?
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - run: echo "CI passed — proceeding with deploy."
+
+  # ---------------------------------------------------------------------------
+  # UAT — automatic deploy on every successful main build
+  # ---------------------------------------------------------------------------
+  deploy-uat:
+    name: Deploy to UAT
+    needs: check-ci
+    runs-on: ubuntu-latest
+    environment: uat          # optional: add a URL/environment link in GitHub
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/stride-github-actions
+          aws-region: eu-west-2
+
+      - name: Make infra scripts executable
+        run: chmod +x infra/apprunner-deploy.sh infra/wait-for-service.sh
+
+      - name: Create or deploy stride-uat
+        env:
+          STRIDE_SECRET_UAT: ${{ secrets.STRIDE_SECRET_UAT }}
+        run: |
+          ./infra/apprunner-deploy.sh \
+            stride-uat \
+            ${{ secrets.AWS_ACCOUNT_ID }} \
+            sha-${{ github.event.workflow_run.head_sha }}
+
+      - name: Wait for UAT to be RUNNING
+        run: |
+          SERVICE_ARN=$(cat /tmp/service-arn.txt)
+          ./infra/wait-for-service.sh "${SERVICE_ARN}" 600
+
+  # ---------------------------------------------------------------------------
+  # Production — requires manual approval via GitHub environment protection
+  # ---------------------------------------------------------------------------
+  deploy-prod:
+    name: Deploy to Production
+    needs: deploy-uat
+    runs-on: ubuntu-latest
+    # Protect this environment in repo Settings → Environments → production
+    # and add yourself as a required reviewer. The workflow pauses here until
+    # you click Approve in the GitHub UI.
+    environment: production
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/stride-github-actions
+          aws-region: eu-west-2
+
+      - name: Make infra scripts executable
+        run: chmod +x infra/apprunner-deploy.sh infra/wait-for-service.sh
+
+      - name: Create or deploy stride-prod
+        env:
+          STRIDE_SECRET_PROD: ${{ secrets.STRIDE_SECRET_PROD }}
+        run: |
+          # Deploy the exact same SHA that was approved from UAT — not `latest`
+          ./infra/apprunner-deploy.sh \
+            stride-prod \
+            ${{ secrets.AWS_ACCOUNT_ID }} \
+            sha-${{ github.event.workflow_run.head_sha }}
+
+      - name: Wait for Production to be RUNNING
+        run: |
+          SERVICE_ARN=$(cat /tmp/service-arn.txt)
+          ./infra/wait-for-service.sh "${SERVICE_ARN}" 600
+
+      - name: Print production URL
+        run: |
+          SERVICE_ARN=$(cat /tmp/service-arn.txt)
+          URL=$(aws apprunner describe-service \
+            --service-arn "${SERVICE_ARN}" \
+            --query "Service.ServiceUrl" \
+            --output text)
+          echo "Production live at: https://${URL}"

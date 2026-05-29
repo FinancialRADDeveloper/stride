@@ -1,0 +1,230 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Stride bootstrap — run ONCE to create all persistent AWS infrastructure.
+  Creates: ECR repo, S3 bucket (Litestream), GitHub OIDC provider, and all
+  IAM roles. After this stack is deployed, push to main to trigger the first
+  build; the deploy workflow creates the App Runner services automatically.
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Default: FinancialRADDeveloper
+    Description: GitHub organisation or username that owns the stride repo
+  GitHubRepo:
+    Type: String
+    Default: stride
+    Description: GitHub repository name
+
+Resources:
+
+  # ---------------------------------------------------------------------------
+  # S3 — Litestream SQLite replication
+  # ---------------------------------------------------------------------------
+  LitestreamBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain   # never auto-delete production data
+    Properties:
+      BucketName: !Sub "stride-db-${AWS::AccountId}"
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: PruneOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 14    # keep 2 weeks of old DB snapshots
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ---------------------------------------------------------------------------
+  # ECR — container registry
+  # ---------------------------------------------------------------------------
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: stride
+      ImageTagMutability: MUTABLE
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [{
+              "rulePriority": 1,
+              "description": "Keep the 20 most-recent images; expire the rest",
+              "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 20
+              },
+              "action": { "type": "expire" }
+            }]
+          }
+
+  # ---------------------------------------------------------------------------
+  # IAM — GitHub Actions OIDC (no long-lived credentials in GitHub secrets)
+  # ---------------------------------------------------------------------------
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        # GitHub's current OIDC thumbprints (AWS validates both)
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: stride-github-actions
+      Description: Assumed by GitHub Actions via OIDC — push images, deploy App Runner
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !GetAtt GitHubOIDCProvider.Arn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                "token.actions.githubusercontent.com:aud": sts.amazonaws.com
+              StringLike:
+                # Scoped to this repo only — all branches/environments
+                "token.actions.githubusercontent.com:sub":
+                  !Sub "repo:${GitHubOrg}/${GitHubRepo}:*"
+      Policies:
+        - PolicyName: stride-ci-cd
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # ECR — account-level auth token (no resource restriction possible)
+              - Sid: ECRAuth
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+
+              # ECR — push/pull scoped to the stride repo only
+              - Sid: ECRPushPull
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:DescribeRepositories
+                  - ecr:DescribeImages
+                  - ecr:ListImages
+                Resource: !GetAtt ECRRepository.Arn
+
+              # App Runner — create services on first deploy, update thereafter
+              - Sid: AppRunnerDeploy
+                Effect: Allow
+                Action:
+                  - apprunner:CreateService
+                  - apprunner:UpdateService
+                  - apprunner:StartDeployment
+                  - apprunner:DescribeService
+                  - apprunner:ListServices
+                  - apprunner:TagResource
+                  - apprunner:CreateAutoScalingConfiguration
+                  - apprunner:DescribeAutoScalingConfiguration
+                Resource: "*"
+
+              # IAM — allow CI to pass the App Runner roles when creating services
+              - Sid: PassAppRunnerRoles
+                Effect: Allow
+                Action: iam:PassRole
+                Resource:
+                  - !GetAtt AppRunnerAccessRole.Arn
+                  - !GetAtt AppRunnerInstanceRole.Arn
+
+  # ---------------------------------------------------------------------------
+  # IAM — App Runner access role (pulls images from ECR)
+  # ---------------------------------------------------------------------------
+  AppRunnerAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: stride-apprunner-access-role
+      Description: Allows App Runner to pull images from ECR
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # AWS-managed policy granting ECR pull + describe
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+
+  # ---------------------------------------------------------------------------
+  # IAM — App Runner instance role (runtime permissions for running containers)
+  # ---------------------------------------------------------------------------
+  AppRunnerInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: stride-apprunner-instance-role
+      Description: Runtime role for Stride containers — Litestream S3 read/write
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: litestream-s3
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: LitestreamReadWrite
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub "${LitestreamBucket.Arn}/*"
+              - Sid: LitestreamList
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt LitestreamBucket.Arn
+
+# ---------------------------------------------------------------------------
+# Outputs — referenced by bootstrap.sh and the deploy workflow
+# ---------------------------------------------------------------------------
+Outputs:
+  ECRRepositoryUri:
+    Description: Full ECR URI for the stride image
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/stride"
+    Export:
+      Name: stride-ecr-uri
+
+  LitestreamBucketName:
+    Description: S3 bucket used by Litestream for SQLite replication
+    Value: !Ref LitestreamBucket
+    Export:
+      Name: stride-litestream-bucket
+
+  GitHubActionsRoleArn:
+    Description: IAM role ARN assumed by GitHub Actions via OIDC
+    Value: !GetAtt GitHubActionsRole.Arn
+    Export:
+      Name: stride-github-actions-role
+
+  AppRunnerAccessRoleArn:
+    Description: Role ARN passed to App Runner for ECR access
+    Value: !GetAtt AppRunnerAccessRole.Arn
+    Export:
+      Name: stride-apprunner-access-role
+
+  AppRunnerInstanceRoleArn:
+    Description: Runtime role ARN for App Runner containers
+    Value: !GetAtt AppRunnerInstanceRole.Arn
+    Export:
+      Name: stride-apprunner-instance-role

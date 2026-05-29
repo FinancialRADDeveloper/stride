@@ -3,6 +3,11 @@ FROM python:3.12-slim
 # Install uv from the official distroless image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Install Litestream for SQLite → S3 replication in production.
+# In local docker-compose it is present but never invoked (entrypoint skips
+# it when LITESTREAM_REPLICA_URL is not set).
+COPY --from=litestream/litestream:0.3.13 /usr/local/bin/litestream /usr/local/bin/litestream
+
 WORKDIR /app
 
 # Install external dependencies first — this layer is cached unless
@@ -17,8 +22,13 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY stride/ stride/
 RUN uv sync --frozen --no-dev
 
+# Copy entrypoint — handles Litestream restore + replicate when
+# LITESTREAM_REPLICA_URL is set; falls through to plain `uv run stride` locally.
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Persistent data volume — SQLite file lives here.
-# Override DATA_DIR to point elsewhere (e.g. an EFS mount) without rebuilding.
+# In production, Litestream replicates this to S3; DATA_DIR is still /data.
 ENV DATA_DIR=/data
 RUN mkdir -p /data
 
@@ -30,4 +40,4 @@ EXPOSE 8050
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8050/health')" || exit 1
 
-CMD ["uv", "run", "stride"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
