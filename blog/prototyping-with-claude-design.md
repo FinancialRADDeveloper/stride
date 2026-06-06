@@ -78,7 +78,7 @@ The sentence I keep coming back to: **the mockup is a frozen spec that can't be 
 
 ## What the Build Spec Became
 
-Alongside the prototype, I wrote a full Python build specification: Dash for the UI layer, SQLite for the database, Google Calendar OAuth for sync, `uv` for environment management.
+Alongside the prototype, I wrote a full Python build specification: Dash for the UI layer, SQLite for the database, Google Calendar OAuth for sync, and standard pip/virtual environments for dependency management.
 
 The spec goes into detail that surprised even me as I was writing it. The database schema has six tables. The history protocol specifies exactly what gets written on every mutation — a `moved` event includes both the source and destination day with human-readable labels, an `edited` event captures the field name plus before and after values, a `deleted` task gets copied to a tombstone table before the cascade. The event kinds, the service function signatures, the Pydantic models, the derived fields that should never be stored — all of it is in the spec.
 
@@ -90,7 +90,7 @@ Everything — the prototype React files, the HTML, and the full Python spec —
 
 ## What Comes Next
 
-Phase 1 of the Python build: repo scaffolding with `uv`, the SQLite schema and migration runner, the core `create_task` and `list_tasks` service functions, and a Dash app that boots and shows a placeholder "Stride" page. That's it — no UI components, no board, no drag and drop. Just the foundation.
+Phase 1 of the Python build: repo scaffolding, the SQLite schema and migration runner, the core `create_task` and `list_tasks` service functions, and a Dash app that boots and shows a placeholder "Stride" page. That's it — no UI components, no board, no drag and drop. Just the foundation.
 
 The discipline of stopping there matters. Phase 1 done correctly means Phase 2 (the board UI) has a stable backend to sit on. The build spec breaks the work into six phases for exactly this reason: each phase should produce something that runs, even if it doesn't do much yet.
 

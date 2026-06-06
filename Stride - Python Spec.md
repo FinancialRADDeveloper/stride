@@ -5,9 +5,12 @@
 > visual + interaction source of truth; this doc translates it into a buildable
 > Python application.
 
-**Stack:** Dash · SQLite · Google Calendar (two-way OAuth) · `uv` for env mgmt
-**Target runtime:** localhost only, run via `uv run stride` from `self-organisation/`
-**Deliverable in this spec:** enough detail that an AI coding assistant (Claude Code) can scaffold and build the first running version without further design clarification.
+> [!NOTE]
+> **Tooling Update:** While this specification originally targeted `uv` for environment management, the project transitioned back to standard `pip` and a `requirements.txt` / Docker setup in PR #35 to avoid tool creep and align with a container-first Dev Container vision.
+
+**Stack:** Dash · SQLite · Google Calendar (two-way OAuth) · `pip` / `docker`
+**Target runtime:** localhost (via `python -m stride run`) or Docker container
+**Deliverable in this spec:** enough detail that an AI coding assistant can scaffold and build the first running version without further design clarification.
 
 ---
 

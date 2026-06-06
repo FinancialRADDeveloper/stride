@@ -8,9 +8,9 @@ There's a particular kind of frustration that every developer knows. You have a 
 
 That was me, a few weeks ago.
 
-I'd been looking for a tool to [describe the core problem your tool solves — e.g. "manage my AI-assisted development workflow", "organise my project context across sessions", "track decisions across a codebase"]. I won't pretend the market is empty. There are plenty of options. The problem wasn't that nothing existed — it was that everything I tried was built around someone else's assumptions about how I work.
+I'd been looking for a tool to manage my rolling daily tasks and see ambient task histories (like how old a task is, and how many times I've moved it to "tomorrow" without doing it). I won't pretend the market is empty. There are plenty of options. The problem wasn't that nothing existed — it was that everything I tried was built around someone else's assumptions about how I work.
 
-So I decided to build my own. And I decided to document the entire journey here.
+So I decided to build my own: **Stride**. And I decided to document the entire journey here.
 
 ---
 
@@ -34,7 +34,7 @@ I was in the middle of yet another free trial when I caught myself spending more
 
 I closed the tab, opened a new one, and started writing notes about exactly what I actually wanted.
 
-Within twenty minutes, I had a clearer picture of what [TOOL NAME] needed to do than any product page I'd read. The requirements weren't exotic — they were just specific to how I think and work. And the only way to get something built around how *I* think was to build it myself.
+Within twenty minutes, I had a clearer picture of what Stride needed to do than any product page I'd read. The requirements weren't exotic — they were just specific to how I think and work. And the only way to get something built around how *I* think was to build it myself.
 
 The slightly terrifying part: I'd have to actually build it.
 
@@ -52,15 +52,13 @@ I wanted to test that hypothesis properly. Not by reading about it, but by actua
 
 ## The Stack I'm Using
 
-I'm not loyal to a single AI assistant. I've got four in rotation, and I think that's actually the right call:
+I'm not loyal to a single AI assistant. I've got three in rotation, and I think that's actually the right call:
 
-**Claude Code** — My primary day-to-day assistant. It lives in the terminal, it understands my codebase, and it's where I do the bulk of implementation work. The CLAUDE.md system (more on this in the next post) makes it genuinely useful for sustained work on a real project, not just one-off queries.
+**Antigravity** (Google DeepMind) — My primary reasoning and verification agent. When I'm rebasing code, verifying tests, tidying up directory structures, or designing complex multi-file integrations, Antigravity is the pairing partner I trust. Its systematic verification loops save hours of manual testing.
 
-**Cursor** — For anything that benefits from the IDE-level integration. When I want to see the AI working *with* the code visually, side by side, Cursor is where I go. Particularly good for refactoring sessions where I want to see the diff as we go.
+**Claude Code** — For bootstrapping and initial feature generation. It's excellent at generating scaffolding, drafting initial file specs, and writing markdown documentation.
 
-**Codex** — [Add your specific use case for Codex here — e.g. "I'm using it primarily for generating test cases and boilerplate that I'd otherwise write mechanically."] It fits well for tasks where I want something generated quickly and am going to review it carefully before it touches the codebase.
-
-**Junie (JetBrains AI)** — [Add your specific use case for Junie here.] If you're already living in a JetBrains IDE for certain parts of your work, Junie slots in without the context switch.
+**Cursor** — For anything that benefits from IDE-level visual integration. When I want to see the AI working *with* the code visually, side by side, or review a visual git diff, Cursor is where I go.
 
 I'll write a dedicated post comparing these tools head-to-head — with real examples from this project. For now: I'm not trying to find one winner. Each has a different centre of gravity, and I want to understand where each one actually earns its place.
 
@@ -70,7 +68,7 @@ I'll write a dedicated post comparing these tools head-to-head — with real exa
 
 I want to be clear about something before this series goes any further.
 
-I'm not claiming AI will write [TOOL NAME] for me. It won't. Every design decision, every architectural choice, every judgement call about what goes in version one versus what gets deferred — that's mine. The AI assists. The developer decides.
+I'm not claiming AI will write Stride for me. It won't. Every design decision, every architectural choice, every judgement call about what goes in version one versus what gets deferred — that's mine. The AI assists. The developer decides.
 
 I'm also not claiming this will be faster or cheaper than hiring someone. I genuinely don't know yet. Part of what I'm trying to find out.
 
@@ -80,7 +78,7 @@ What I *am* claiming is that this is a genuinely interesting moment to be buildi
 
 ## What's Coming Next
 
-In the next post, I'll walk through how I've structured my development environment from day one: the CLAUDE.md setup, the project memory system, and what a working session actually looks like. Getting this right at the start has already paid dividends, and I think it's the piece most developers skip when they try to use AI coding assistants for real work.
+In the next post, I'll walk through how I've structured my development environment from day one: the developer reference documentation, the project memory system, and what a working session actually looks like. Getting this right at the start has already paid dividends, and I think it's the piece most developers skip when they try to use AI coding assistants for real work.
 
 If you're building something yourself, or seriously evaluating whether to, I hope this series gives you something more useful than a list of features. I'm going to tell you what it actually feels like — and what I'd do differently.
 
@@ -92,6 +90,6 @@ If you're building something yourself, or seriously evaluating whether to, I hop
 
 ### LinkedIn Share Blurb
 
-I spent weeks evaluating AI developer tools and realised none of them did exactly what I needed — so I decided to build my own from scratch, using Claude Code, Cursor, Codex, and Junie as my development stack. This is the first post in a series documenting the full journey: the decisions, the workflow, the mistakes, and what I'm learning. If you're curious about what AI-assisted development looks like on a real project, follow along.
+I spent weeks evaluating AI developer tools and realised none of them did exactly what I needed — so I decided to build my own from scratch, using Antigravity, Claude Code, and Cursor as my development stack. This is the first post in a series documenting the full journey: the decisions, the workflow, the mistakes, and what I'm learning. If you're curious about what AI-assisted development looks like on a real project, follow along.
 
 *[Link to post]*
