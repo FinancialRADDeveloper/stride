@@ -2,7 +2,7 @@
 
 > A personal day-lane task board — built in public with AI.
 
-Stride is a tool I built because nothing on the market quite fit. It's a day-based kanban board with first-class history tracking (how many times has this card been moved? how old is it?), Google Calendar two-way sync, and a clean, honest UI that makes stale tasks uncomfortable rather than invisible.
+Stride is a tool built because nothing on the market quite fit. It's a day-based kanban board with first-class history tracking (how many times has this card been moved? how old is it?), Google Calendar two-way sync, and a clean, honest UI that makes stale tasks uncomfortable rather than invisible.
 
 This repo documents the entire build — design, architecture, code, and the AI-assisted workflow behind all of it.
 
@@ -12,65 +12,102 @@ This repo documents the entire build — design, architecture, code, and the AI-
 
 | Phase | Status |
 |---|---|
-| Design prototype (Claude Design) | ✅ Done |
+| Design prototype (HTML + React) | ✅ Done |
 | Python spec | ✅ Done |
-| Phase 1 — Skeleton (Dash + SQLite) | 🔜 Next |
-| Phase 2 — Board UI | ⬜ Planned |
-| Phase 3 — Mutations & history | ⬜ Planned |
-| Phase 4 — Drag and drop | ⬜ Planned |
-| Phase 5 — Google Calendar sync | ⬜ Planned |
-| Phase 6 — Polish | ⬜ Planned |
+| Phase 1 — Skeleton (Dash + SQLite) | ✅ Done |
+| Phase 2 — Board UI | ✅ Done |
+| Phase 3 — Mutations & history | ✅ Done |
+| Phase 4 — Drag and drop | ✅ Done |
+| Phase 5 — Google Calendar sync | 🚧 In Progress (`feat/phase-5-gcal`) |
+| Phase 6 — Polish | 🚧 In Progress (`feat/phase-6-composer-polish`) |
 
 ---
 
 ## What's in this repo
 
 ```
-Stride.html              # Interactive design prototype (Claude Design)
-stride/                  # React/JSX source for the prototype
-Stride - Python Spec.md  # Full build spec for the Python/Dash app
-blog/                    # Hashnode post drafts
-docs/                    # Development notes
-tools/                   # Utility scripts
+Stride.html              # Interactive HTML/JS design prototype
+prototype/               # React/JSX source files for the original prototype
+stride/                  # Stride Python/Dash application source code
+├── assets/              # Static assets (CSS, JS drag-drop, client-side listeners)
+├── services/            # Pure Python business/DB logic (tasks, achievements, etc.)
+├── ui/                  # Dash application layout, components, and callbacks
+└── cli.py               # Typer CLI entrypoint
+docs/                    # Development documentation, design specs, and PR logs (docs/blog/)
+blog/                    # Draft Hashnode blog posts
+tests/                   # Pytest test suite for service layer functions
 project-settings.md      # Project goals and AI tooling stack
+Stride - Python Spec.md  # Full build spec for the Python/Dash app
 ```
 
 ---
 
-## Running the design prototype
+## Running the Application
 
-The prototype is a self-contained React app that runs in the browser. Because it loads local JSX files, you need a tiny local server — not a full install, just Python:
+Stride runs locally as a containerised app or a standard Python application.
 
+### Running with Docker (Recommended)
+You can run Stride inside a Docker container without needing any host Python setup:
 ```bash
-cd /path/to/self-organisation
+docker compose up --build
+```
+Then open `http://localhost:8050` in your web browser.
+
+### Running Locally with Python
+To run the server locally, install the dependencies from `requirements.txt` into your virtual environment:
+```bash
+pip install -r requirements.txt
+python -m stride run --port 8050
+```
+Then open `http://127.0.0.1:8050` in your web browser.
+
+### Running Tests
+Execute the local test suite using:
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+### (Optional) Running the Legacy Design Prototype
+To view the original interactive React prototype in the browser:
+```bash
 python -m http.server 8080
 ```
-
 Then open `http://localhost:8080/Stride.html`.
-
-**What it shows:** the full board UI with realistic seed data — day columns, category filtering, card detail panel, calendar chooser, and a tweaks panel. Nothing persists; it's a design tool, not the real app.
 
 ---
 
-## Tech stack (real app — coming in Phase 1)
+## Tech Stack
 
 | Layer | Choice |
 |---|---|
-| UI framework | [Dash](https://dash.plotly.com/) (Python) |
-| Database | SQLite (single file, local) |
-| Calendar sync | Google Calendar API (OAuth 2.0) |
-| Env / runner | [uv](https://github.com/astral-sh/uv) |
+| **UI Framework** | [Plotly Dash](https://dash.plotly.com/) (Python) |
+| **UI Components** | [dash-mantine-components](https://www.dash-mantine-components.com/) |
+| **Database** | SQLite (single file, deleted journal mode for thread safety) |
+| **Calendar Sync** | Google Calendar API & Cryptography (Fernet token encryption) |
+| **Job Scheduler** | APScheduler (for periodic pull syncs) |
+| **Validation** | Pydantic (v2) |
 
 ---
 
-## Blog series
+## Blog Series & Engineering Logs
 
-*From Prompt to Product: Building My Own AI-Powered Tool* — building and documenting every step on Hashnode.
+*From Prompt to Product: Building My Own AI-Powered Tool* — documenting every architectural decision, UX pattern, and lessons learned.
 
-Posts published so far: [coming soon]
+- **Draft Blog Series:** Drafted articles for Hashnode are in [blog/](file:///c:/Code/stride/blog).
+- **PR Technical Logs:** Detailed write-ups for all 35 Pull Requests are located in [docs/blog/](file:///c:/Code/stride/docs/blog), detailing:
+  - Architecture decisions (such as the append-only event ledger and thread-safe SQLite connection).
+  - UX challenges (such as React 18 event capture phase for DnD and withOverlay-free drawers).
+  - Motivation mechanics (such as the Achievements Panel and Streak Tracking).
+  - Dependency hygiene (transitioning away from `uv` to `pip` in PR #35).
 
 ---
 
-## AI tooling
+## AI Tooling
 
-Built using **Claude Code** as the primary coding assistant, with the full workflow documented in `project-settings.md` and `docs/claude-best-practices.md`.
+Stride is built using an **AI-assisted, agent-directed workflow**. We utilize:
+- **Google's Antigravity Agent:** For large-scale refactorings, verification loops, and codebase tidiness.
+- **Claude Code:** For initial scaffolding and feature implementation.
+- **Cursor:** For fast inline edits and autocomplete.
+
+All tooling decisions and prompt patterns are documented in `project-settings.md` and `docs/ai-assisted-best-practices.md`.
