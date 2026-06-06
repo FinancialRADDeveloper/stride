@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "prototype",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "C:/Code/stride"],
+      "port": 8080
+    },
+    {
+      "name": "stride",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "stride", "run", "--port", "8050"],
+      "port": 8050
+    }
+  ]
+}
