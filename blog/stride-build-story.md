@@ -2,7 +2,7 @@
 
 Stride is a personal task board built around a simple insight: tasks belong to days, not lists. Not a Kanban board with stateless swim lanes — a time-anchored day-lane board where every card sits on a specific date, carries an estimate, ages visibly, and raises a flag when you've moved it three times without doing it. It's the tool I wanted when I was context-switching between consulting engagements and losing track of what mattered each day.
 
-The stack is Python, Dash (Plotly's Flask-based UI framework), SQLite, Pydantic, and eventually Docker targeting AWS App Runner. I chose these deliberately: they let me move fast as a solo developer, keep hosting costs low enough for a personal tool that might become a product, and avoid the React complexity that kills side projects before they ship. This document traces every pull request from the first HTML prototype to a containerised, cloud-ready app — not as a victory lap, but as an honest record of the decisions, the dead ends, and what I'd do differently.
+The stack is Python, Dash (Plotly's Flask-based UI framework), SQLite, Pydantic, and Docker targeting AWS App Runner. I chose these deliberately: they let me move fast as a solo developer, keep hosting costs low enough for a personal tool that might become a product, and avoid the React complexity that kills side projects before they ship. This document traces every pull request from the first HTML prototype to a containerised, cloud-ready app — not as a victory lap, but as an honest record of the decisions, the dead ends, and what I'd do differently.
 
 ---
 
@@ -28,23 +28,28 @@ PR #2 and PR #3 solved a problem that sounds embarrassing in hindsight: the prot
 
 The fix was mechanical — move `*.jsx` to `prototype/stride/`, update five `<script src>` paths in `Stride.html` — but the lesson was architectural: **clear the ground before you pour the foundation**. A thirty-minute housekeeping PR saved a week of confusing import errors later.
 
-PR #3 delivered the Python walking skeleton: `pyproject.toml`, the `uv` lockfile, a Typer CLI entry point, and a Dash app that served a placeholder page. Nothing more.
+PR #3 delivered the Python walking skeleton: `pyproject.toml`, a Typer CLI entry point, a local virtual environment, and a Dash app that served a placeholder page. Nothing more.
 
 ```python
 # stride/cli.py
 @app.command()
-def run(port: int = 8050, debug: bool = False):
+def run(
+    port: int = typer.Option(8050, "--port", "-p", help="Port to listen on."),
+    host: str = typer.Option("0.0.0.0", "--host", "-h", help="Host to bind on."),
+    debug: bool = typer.Option(False, "--debug", help="Enable Dash debug mode."),
+):
     """Start the Stride web app."""
     from stride.ui.app import create_app
+
     dash_app = create_app()
-    dash_app.run(port=port, debug=debug)
+    dash_app.run(host=host, port=port, debug=debug)
 ```
 
-The dependency choices here are worth explaining. `uv` instead of pip or Poetry because it's fast and its `[dependency-groups]` format separates dev deps cleanly. Typer for the CLI because it generates `--help` text for free. Dash over FastAPI + React because I was the only developer — React's component ecosystem is powerful, but it's also a full-time job to maintain. Dash lets me write Python all the way down while still getting a reactive, server-rendered UI.
+The dependency choices here are worth explaining. Dash over FastAPI + React because I was the only developer — React's component ecosystem is powerful, but it's also a full-time job to maintain. Dash lets me write Python all the way down while still getting a reactive, server-rendered UI. 
 
-One thing that bit me: `uv.lock` was initially gitignored, which meant installs weren't reproducible. Fixed in this PR. Reproducibility is non-negotiable before you write any business logic — it's the difference between "works on my machine" and "works on any machine."
+We initially set up our environment with `uv`—a fast Rust-based package manager. However, as we moved toward a containerised Docker runtime, `uv` introduced unnecessary tooling complexity into the local setup and runtime images. We later stripped it out in PR #35 in favour of standard Python packaging (`pip` + `requirements.txt`). This kept our local development simple, standard, and fully aligned with standard container builds.
 
-**What this unlocked:** a known-good baseline for every subsequent feature branch. Every PR after this one started with `uv sync && uv run stride` as the first verification step.
+**What this unlocked:** a known-good baseline for every subsequent feature branch. Every PR after this started with installing dependencies via `requirements.txt` and verifying the app started cleanly.
 
 > **LinkedIn version:** The most important commit in any side project is the walking skeleton — the moment you can `git clone; run one command; see something in your browser`. I spent half a day just on this, and it paid dividends every single day after. What's the first command you run when starting a new project?
 
@@ -310,18 +315,23 @@ The `assignee` field itself — the "Delegated to" field in the drawer, the `→
 
 With the board stable and usable, the natural next step was containerisation — both for reproducibility and for the path to a hosted product.
 
-The Dockerfile is 22 lines:
+The Dockerfile is 18 lines:
 
 ```dockerfile
 FROM python:3.12-slim
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
 WORKDIR /app
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
 
+# Install dependencies first for layer caching
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source and pyproject.toml to install stride package
 COPY stride/ stride/
+COPY pyproject.toml ./
+
+# Install stride package itself without reinstalling dependencies
+RUN pip install --no-cache-dir --no-deps .
 
 ENV DATA_DIR=/data
 RUN mkdir -p /data
@@ -330,10 +340,12 @@ EXPOSE 8050
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8050/health')" || exit 1
 
-CMD ["uv", "run", "stride"]
+CMD ["python", "-m", "stride", "run"]
 ```
 
-Three deliberate choices. First, `uv sync --frozen --no-dev` at the `pyproject.toml` layer — so the dependency installation layer is cached unless dependencies change, not unless source code changes. Source changes don't invalidate the cache. Second, `ENV DATA_DIR=/data` with a separate volume mount point — the SQLite file lives outside the image layer so it survives container restarts and image updates. Third, the `/health` endpoint added to the Flask app so App Runner and docker-compose healthchecks have a meaningful signal.
+We chose a standard Python 3.12 slim base image, copy `requirements.txt` to install external packages, and copy the source code to perform a `--no-deps` install of the local package. This ensures Docker's dependency layer remains cached unless packages change. 
+
+Our SQLite database file lives in `/data` inside the container, bind-mounted to `./data` on the host, so it persists across container lifecycles.
 
 The health endpoint is four lines in `app.py`:
 
@@ -347,7 +359,19 @@ Dash exposes the underlying Flask app via `app.server`, so adding Flask routes a
 
 **What this unlocked:** a `docker compose up` workflow for local development and a clear path to AWS App Runner for hosting. The same image that runs locally runs in production.
 
-> **LinkedIn version:** The Dockerfile for a Python app with uv is 22 lines. The key insight: copy pyproject.toml and uv.lock first, run `uv sync --frozen`, then copy the source. Source changes don't bust the dependency cache. It sounds obvious but most Python Dockerfiles get this wrong. What's your favourite Docker optimisation?
+---
+
+## Dependency Hygiene & The Pivot to Antigravity
+
+In PR #35, we paused feature development to focus on **dependency hygiene** and a transition in our AI agent stack. 
+
+Early in development, `uv` crept in as a local package manager. While `uv` is fast and capable, introducing a new tool without a dedicated learning session and comparative analysis felt like "vibe coding." For a project whose ultimate goal is a **Dev Container** model—where developers require zero configuration on their host machines—a standard Python baseline is far more logical. 
+
+We replaced `uv` with standard `requirements.txt` and `pip`, removed `uv.lock`, and updated the Docker container to execute the app via standard `python -m stride run`. 
+
+This tidy-up also marked the pivot from Claude Code to Google's **Antigravity** agent. This switch highlighted the importance of git branch hygiene: before checking out our clean-up branch, we pulled 17 commits to sync local `main` with remote `origin/main` to ensure our new AI partner was operating on the latest codebase.
+
+> **LinkedIn version:** Tool creep is real. I stripped out a modern package resolver from my side project because I realized I was "vibe coding" instead of choosing tools deliberately. In Docker-first environments, standard pip and requirements.txt are still the simplest, most reproducible baseline. What's one tool you removed from your stack because it added more overhead than value?
 
 ---
 
@@ -362,7 +386,5 @@ Three things are next on the roadmap, in order of impact:
 **Multi-user and auth** are the transition from personal tool to hosted product. The current singleton `app_db()` is appropriate for single-user; multi-user needs per-session database isolation or a proper user table with row-level filtering. The Dash layout function is already `lambda`-based (multi-user safe for store state); the database layer is the gap.
 
 **Recurring tasks** — there's a comment in `0001_init.sql`: `-- TODO (v0.2): add recurrence_rule TEXT to support recurring tasks without schema rewrite`. The event log makes recurrence tractable: generate future instances lazily from the recurrence rule when building the board window, rather than materialising them in the database.
-
-The architecture held up. Pydantic caught type errors. The event log kept history honest. SQLite survived everything I threw at it. Dash's callback model was occasionally maddening but ultimately the right call for a solo Python developer building a UI-heavy tool.
 
 The code is public at [github.com/FinancialRADDeveloper/stride](https://github.com/FinancialRADDeveloper/stride).
