@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import os
+
 import dash
 import dash_mantine_components as dmc
 from dash import html, dcc
-from flask import jsonify
+from flask import Flask, jsonify
 
+from stride.auth import init_login
 from stride.db import app_db
+from stride.routes.auth_bp import login_bp
 from stride.services.seed import seed_if_empty
 from stride.ui.theme import STRIDE_THEME
 from stride.ui.components.topbar import topbar
@@ -15,10 +19,17 @@ from stride.ui.components.detail import detail_drawer
 from stride.ui.components.reschedule_picker import reschedule_picker
 from stride.ui.components.achievements import achievements_panel
 
+_TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "templates"))
+_SECRET_KEY = os.environ.get("STRIDE_SECRET_KEY", "dev-secret-change-me-in-production")
+
 
 def create_app() -> dash.Dash:
+    # Pre-create Flask server so we can set template_folder before Dash sees it
+    server = Flask(__name__, template_folder=_TEMPLATES_DIR)
+
     app = dash.Dash(
         __name__,
+        server=server,
         title="Stride",
         assets_folder="../assets",
         suppress_callback_exceptions=True,
@@ -32,12 +43,16 @@ def create_app() -> dash.Dash:
         ],
     )
 
+    # Auth: Flask-Login + session secret
+    init_login(server, _SECRET_KEY)
+    server.register_blueprint(login_bp)
+
     # Seed on first boot
     conn = app_db()
     seed_if_empty(conn)
 
     # Health-check endpoint — used by App Runner and docker-compose healthchecks
-    @app.server.route("/health")
+    @server.route("/health")
     def health():
         return jsonify({"status": "ok"}), 200
 
