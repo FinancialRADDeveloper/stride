@@ -8,6 +8,7 @@ import dash
 import dash_mantine_components as dmc
 from dash import html, dcc
 from flask import Flask, jsonify
+from flask_login import current_user
 
 from stride.auth import init_login
 from stride.db import app_db
@@ -74,6 +75,10 @@ def create_app() -> dash.Dash:
 
 
 def _layout():
+    # current_user is valid here — _layout() is called per HTTP request inside Flask context
+    uid = current_user.id if current_user.is_authenticated else ""
+    uname = current_user.display_name if current_user.is_authenticated else ""
+
     return dmc.MantineProvider(
         id="mantine-provider",
         theme=STRIDE_THEME,
@@ -81,7 +86,7 @@ def _layout():
         children=html.Div(
             id="stride-root",
             children=[
-                topbar(),
+                topbar(display_name=uname),
                 html.Div(
                     className="stride-body",
                     children=[
@@ -97,6 +102,7 @@ def _layout():
                     ],
                 ),
                 # Stores
+                dcc.Store(id="store-user-id", data=uid),
                 dcc.Store(id="store-tasks", data=[]),
                 dcc.Store(id="store-reschedule-source", data=None),
                 dcc.Store(id="store-selected", data=None),

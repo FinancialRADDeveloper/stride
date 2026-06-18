@@ -1620,3 +1620,31 @@ button:focus-visible { outline: 2px solid var(--p3); outline-offset: 2px; }
 [data-mantine-color-scheme="dark"] .ach-stats-bar { background: var(--surface-2); }
 [data-mantine-color-scheme="dark"] .ach-task-row:hover { background: var(--line-soft); }
 .stride-ctx-item--danger:hover { background: #fff0f0; }
+
+/* ---- Topbar user chip ---- */
+.topbar-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.topbar-user-name {
+  color: var(--fg);
+  font-size: 12px;
+}
+
+.topbar-signout {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.topbar-signout:hover { color: var(--fg); text-decoration: underline; }
+
+[data-mantine-color-scheme="dark"] .topbar-user-chip { border-color: var(--line-soft); }
