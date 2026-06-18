@@ -4,7 +4,7 @@ services:
     ports:
       - "8050:8050"
     volumes:
-      # Bind-mount the local data/ folder so Docker and `uv run stride` share
+      # Bind-mount the local data/ folder so Docker and local python run share
       # the same SQLite file. When we migrate to Postgres this becomes a
       # connection string env var and this mount disappears entirely.
       - ./data:/data
