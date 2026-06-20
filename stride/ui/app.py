@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import os
+
 import dash
 import dash_mantine_components as dmc
 from dash import html, dcc
-from flask import jsonify
+from flask import Flask, jsonify
+from flask_login import current_user
 
+from stride.auth import init_login
 from stride.db import app_db
+from stride.routes.auth_bp import login_bp
 from stride.services.seed import seed_if_empty
 from stride.ui.theme import STRIDE_THEME
 from stride.ui.components.topbar import topbar
@@ -15,10 +20,17 @@ from stride.ui.components.detail import detail_drawer
 from stride.ui.components.reschedule_picker import reschedule_picker
 from stride.ui.components.achievements import achievements_panel
 
+_TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "templates"))
+_SECRET_KEY = os.environ.get("STRIDE_SECRET_KEY", "dev-secret-change-me-in-production")
+
 
 def create_app() -> dash.Dash:
+    # Pre-create Flask server so we can set template_folder before Dash sees it
+    server = Flask(__name__, template_folder=_TEMPLATES_DIR)
+
     app = dash.Dash(
         __name__,
+        server=server,
         title="Stride",
         assets_folder="../assets",
         suppress_callback_exceptions=True,
@@ -32,12 +44,16 @@ def create_app() -> dash.Dash:
         ],
     )
 
+    # Auth: Flask-Login + session secret
+    init_login(server, _SECRET_KEY)
+    server.register_blueprint(login_bp)
+
     # Seed on first boot
     conn = app_db()
     seed_if_empty(conn)
 
     # Health-check endpoint — used by App Runner and docker-compose healthchecks
-    @app.server.route("/health")
+    @server.route("/health")
     def health():
         return jsonify({"status": "ok"}), 200
 
@@ -59,6 +75,10 @@ def create_app() -> dash.Dash:
 
 
 def _layout():
+    # current_user is valid here — _layout() is called per HTTP request inside Flask context
+    uid = current_user.id if current_user.is_authenticated else ""
+    uname = current_user.display_name if current_user.is_authenticated else ""
+
     return dmc.MantineProvider(
         id="mantine-provider",
         theme=STRIDE_THEME,
@@ -66,7 +86,7 @@ def _layout():
         children=html.Div(
             id="stride-root",
             children=[
-                topbar(),
+                topbar(display_name=uname),
                 html.Div(
                     className="stride-body",
                     children=[
@@ -82,6 +102,7 @@ def _layout():
                     ],
                 ),
                 # Stores
+                dcc.Store(id="store-user-id", data=uid),
                 dcc.Store(id="store-tasks", data=[]),
                 dcc.Store(id="store-reschedule-source", data=None),
                 dcc.Store(id="store-selected", data=None),

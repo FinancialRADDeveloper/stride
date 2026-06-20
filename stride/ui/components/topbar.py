@@ -6,7 +6,7 @@ from dash import html
 import dash_mantine_components as dmc
 
 
-def topbar() -> html.Div:
+def topbar(display_name: str = "") -> html.Div:
     """Return the fixed header bar with logo, date range, and controls."""
     return html.Div(
         id="topbar",
@@ -89,6 +89,15 @@ def topbar() -> html.Div:
                     html.Div(className="topbar-spacer"),
                     html.Button("☾", id="btn-dark-mode", className="btn-icon",
                                 title="Toggle dark mode  (preserves session only)", n_clicks=0),
+                    html.Div(className="topbar-spacer"),
+                    # User chip — display name + sign-out link
+                    html.Div(
+                        className="topbar-user-chip",
+                        children=[
+                            html.Span(display_name or "—", className="topbar-user-name mono"),
+                            html.A("sign out", href="/logout", className="topbar-signout"),
+                        ],
+                    ) if display_name else None,
                 ],
             ),
         ],
